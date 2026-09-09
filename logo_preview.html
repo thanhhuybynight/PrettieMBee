@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrettieMBee - Xem Trước Thiết Kế Logo Mèo Pastel</title>
+    <style>
+        :root {
+            --bg-color: #0f0f14;
+            --surface-color: #1a1a24;
+            --surface-card: #232332;
+            --primary-pink: #f7a8b8;
+            --pastel-white: #ffffff;
+            --accent-gold: #ffb300;
+            --text-main: #f0f0f5;
+            --text-muted: #a0a0b2;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: var(--bg-color);
+            color: var(--text-main);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffb3ba, #ffdfba, #ffffba, #baffc9, #bae1ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(247, 168, 184, 0.2);
+            color: var(--primary-pink);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .candidate-card {
+            background: var(--surface-color);
+            border-radius: 28px;
+            padding: 28px;
+            width: 520px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .candidate-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .corner-tag {
+            background: rgba(255, 179, 0, 0.15);
+            color: var(--accent-gold);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .main-preview {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 22px;
+            overflow: hidden;
+            background: #2a2a38;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .main-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .features-box {
+            background: var(--surface-card);
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #d1d1e0;
+        }
+        .mockup-section {
+            margin-top: 10px;
+        }
+        .mockup-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .scale-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0,0,0,0.25);
+            padding: 16px;
+            border-radius: 16px;
+        }
+        .scale-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .scale-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .icon-rounded {
+            border-radius: 22%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: block;
+        }
+        .icon-circle {
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: block;
+        }
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f7a8b8, #e87a90);
+            color: #111;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        /* Phone screen mockup */
+        .phone-mockup-wrapper {
+            margin-top: 50px;
+            background: var(--surface-color);
+            border-radius: 36px;
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+        }
+        .mockup-grid {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .app-icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100px;
+        }
+        .app-icon-img {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: block;
+        }
+        .app-icon-name {
+            font-size: 13px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="badge">ip-as-logo-skill • Quy chuẩn Thiết Kế</div>
+        <h1>PrettieMBee — Xem Trước Logo Mèo Pastel</h1>
+        <p>Biểu tượng nhân vật tối giản (IP as Logo) cho ứng dụng PrettieMBee. Tuân thủ chuẩn 3 màu ngữ nghĩa, hình khối bo tròn không góc nhọn và nhận diện rõ nét ở kích thước nhỏ.</p>
+    </div>
+
+    <div class="container">
+        <!-- Candidate A1 -->
+        <div class="candidate-card">
+            <div class="card-header">
+                <div class="candidate-title">Ứng Viên A1 (Mắt Tròn Tò Mò)</div>
+                <div class="corner-tag">Góc dưới bên trái</div>
+            </div>
+
+            <div class="main-preview">
+                <img src="cat_logo_a1.png" alt="Candidate A1">
+            </div>
+
+            <div class="features-box">
+                • <strong>Đặc điểm:</strong> Mèo trắng tinh khôi má ửng hồng phấn, hai mắt chấm tròn to đen ngơ ngác đáng yêu.<br>
+                • <strong>Tông màu:</strong> Trắng sữa pastel + Hồng phấn cánh hoa + Nền hồng pastel dịu mát.<br>
+                • <strong>Cảm xúc:</strong> Trẻ trung, tò mò, baby-like kawaii.
+            </div>
+
+            <div class="mockup-section">
+                <div class="mockup-title">Kiểm tra độ nhận diện ở các kích thước thu nhỏ</div>
+                <div class="scale-row">
+                    <div class="scale-item">
+                        <img src="cat_logo_a1.png" class="icon-rounded" width="64" height="64">
+                        <div class="scale-label">64px</div>
+                    </div>
+                    <div class="scale-item">
+                        <img src="cat_logo_a1.png" class="icon-rounded" width="48" height="48">
+                        <div class="scale-label">48px</div>
+                    </div>
+                    <div class="scale-item">
+                        <img src="cat_logo_a1.png" class="icon-rounded" width="32" height="32">
+                        <div class="scale-label">32px</div>
+                    </div>
+                    <div class="scale-item">
+                        <img src="cat_logo_a1.png" class="icon-circle" width="48" height="48">
+                        <div class="scale-label">Tròn</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <a href="cat_logo_a1.png" download="PrettieMBee_Logo_A1.png" class="btn btn-primary">Tải File PNG (A1)</a>
+            </div>
+        </div>
+
+        <!-- Candidate A2 -->
+        <div class="candidate-card">
+            <div class="card-header">
+                <div class="candidate-title">Ứng Viên A2 (Mắt Cười Hạnh Phúc)</div>
+                <div class="corner-tag">Góc dưới bên phải</div>
+            </div>
+
+            <div class="main-preview">
+                <img src="cat_logo_a2.png" alt="Candidate A2">
+            </div>
+
+            <div class="features-box">
+                • <strong>Đặc điểm:</strong> Mèo kem sáng, hai mắt cong cười tít ngọt ngào, đường viền mềm mại thanh lịch.<br>
+                • <strong>Tông màu:</strong> Kem pastel + Hồng đào ấm áp + Nền hồng phấn dịu nhẹ.<br>
+                • <strong>Cảm xúc:</strong> Hạnh phúc, thư giãn, ấm áp và gần gũi.
+            </div>
+
+            <div class="mockup-section">
+                <div class="mockup-title">Kiểm tra độ nhận diện ở các kích thước thu nhỏ</div>
+                <div class="scale-row">
+                    <div class="scale-item">
+                        <img src="cat_logo_a2.png" class="icon-rounded" width="64" height="64">
+                        <div class="scale-label">64px</div>
+                    </div>
+                    <div class="scale-item">
+                        <img src="cat_logo_a2.png" class="icon-rounded" width="48" height="48">
+                        <div class="scale-label">48px</div>
+                    </div>
+                    <div class="scale-item">
+                        <img src="cat_logo_a2.png" class="icon-rounded" width="32" height="32">
+                        <div class="scale-label">32px</div>
+                    </div>
+                    <div class="scale-item">
+                        <img src="cat_logo_a2.png" class="icon-circle" width="48" height="48">
+                        <div class="scale-label">Tròn</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <a href="cat_logo_a2.png" download="PrettieMBee_Logo_A2.png" class="btn btn-primary">Tải File PNG (A2)</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone launcher mockup -->
+    <div class="phone-mockup-wrapper">
+        <h2 style="font-size: 20px; margin-bottom: 8px;">📱 Mô Phỏng Icon Trên Màn Hình Điện Thoại Android</h2>
+        <p style="color: var(--text-muted); font-size: 14px;">Cách icon ứng dụng sẽ hiển thị khi được cài đặt trên điện thoại của người dùng</p>
+
+        <div class="mockup-grid">
+            <div class="app-icon-item">
+                <img src="cat_logo_a1.png" class="app-icon-img">
+                <div class="app-icon-name">PrettieMBee</div>
+                <div style="font-size: 11px; color: var(--accent-gold); font-weight: 600;">Bản A1</div>
+            </div>
+
+            <div class="app-icon-item">
+                <img src="cat_logo_a2.png" class="app-icon-img">
+                <div class="app-icon-name">PrettieMBee</div>
+                <div style="font-size: 11px; color: var(--accent-gold); font-weight: 600;">Bản A2</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
