@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">PrettieMBee</string>
+    <string name="app_subtitle">MB Bank Custom Theme Injector</string>
+    <string name="root_status_title">Trạng thái Root</string>
+    <string name="mb_status_title">Ứng dụng MB Bank</string>
+    <string name="installed_themes_title">Theme MB trên máy</string>
+    <string name="community_themes_title">Kho Theme Tuỳ Chỉnh</string>
+    <string name="apply_theme">Áp dụng Theme</string>
+    <string name="target_picker_title">Chọn Theme Đích MB Bank</string>
+    <string name="priority_mode">Chế độ Priority (Tài khoản ưu tiên)</string>
+    <string name="auto_launch_mb">Tự động khởi động lại MB Bank sau khi nạp</string>
+    <string name="auto_deeplink">Mở trang Theme Detail để bấm Áp dụng</string>
+    <string name="backup_current">Sao lưu theme hiện tại trước khi ghi đè</string>
+    <string name="restore_backup">Khôi phục theme gốc</string>
+</resources>
