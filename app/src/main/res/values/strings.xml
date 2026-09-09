@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">PrettieMBee</string>
     <string name="app_subtitle">MB Bank Custom Theme Injector</string>
+    <string name="nav_themes">Kho Theme</string>
+    <string name="nav_system">Hệ Thống</string>
     <string name="root_status_title">Trạng thái Root</string>
     <string name="mb_status_title">Ứng dụng MB Bank</string>
     <string name="installed_themes_title">Theme MB trên máy</string>

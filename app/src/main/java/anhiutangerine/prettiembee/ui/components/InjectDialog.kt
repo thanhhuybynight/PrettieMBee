@@ -25,7 +25,7 @@ import androidx.compose.ui.window.Dialog
 import anhiutangerine.prettiembee.data.model.InjectResult
 import anhiutangerine.prettiembee.ui.theme.DarkBackground
 import anhiutangerine.prettiembee.ui.theme.ErrorRed
-import anhiutangerine.prettiembee.ui.theme.HoneyAmber
+import anhiutangerine.prettiembee.ui.theme.SakuraPink
 import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 
 @Composable
@@ -45,8 +45,8 @@ fun InjectDialog(
 
     Dialog(onDismissRequest = { if (!isRunning) onDismiss() }) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(26.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,7 +59,7 @@ fun InjectDialog(
                 // Header Status Icon
                 if (isRunning) {
                     CircularProgressIndicator(
-                        color = HoneyAmber,
+                        color = SakuraPink,
                         strokeWidth = 3.dp,
                         modifier = Modifier.size(48.dp)
                     )
@@ -133,7 +133,7 @@ fun InjectDialog(
                                 color = when {
                                     logLine.contains("❌") -> ErrorRed
                                     logLine.contains("✅") || logLine.contains("🎉") -> SuccessGreen
-                                    logLine.contains("✨") || logLine.contains("🐝") -> HoneyAmber
+                                    logLine.contains("✨") || logLine.contains("🐝") -> SakuraPink
                                     else -> Color(0xFFDDDDDD)
                                 },
                                 lineHeight = 16.sp
@@ -149,8 +149,8 @@ fun InjectDialog(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (result?.isSuccess == true) SuccessGreen else HoneyAmber,
-                            contentColor = Color.Black
+                            containerColor = if (result?.isSuccess == true) SuccessGreen else SakuraPink,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {

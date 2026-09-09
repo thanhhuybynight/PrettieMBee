@@ -13,33 +13,53 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = HoneyAmber,
-    onPrimary = Color.Black,
-    primaryContainer = HoneyDark,
-    onPrimaryContainer = Color.White,
-    secondary = LavenderMain,
-    onSecondary = Color.Black,
-    tertiary = ElectricBlue,
+    primary = SakuraPink,
+    onPrimary = Color(0xFF3F0B18),
+    primaryContainer = Color(0xFF5E1B2A),
+    onPrimaryContainer = SakuraPinkLight,
+    secondary = SakuraAccent,
+    onSecondary = Color(0xFF3B0715),
+    secondaryContainer = DarkSurfaceContainerHigh,
+    onSecondaryContainer = DarkOnSurface,
+    tertiary = SakuraSubtle,
     background = DarkBackground,
     surface = DarkSurface,
     surfaceVariant = DarkSurfaceVariant,
-    onBackground = Color(0xFFEEEEEE),
-    onSurface = Color(0xFFEEEEEE)
+    surfaceContainerLowest = DarkSurfaceContainerLowest,
+    surfaceContainerLow = DarkSurfaceContainerLow,
+    surfaceContainer = DarkSurfaceContainer,
+    surfaceContainerHigh = DarkSurfaceContainerHigh,
+    surfaceContainerHighest = DarkSurfaceContainerHighest,
+    outline = DarkOutline,
+    outlineVariant = DarkOutlineVariant,
+    onBackground = DarkOnSurface,
+    onSurface = DarkOnSurface,
+    onSurfaceVariant = DarkOnSurfaceVariant
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = HoneyAmber,
-    onPrimary = Color.Black,
-    primaryContainer = HoneyYellow,
-    onPrimaryContainer = Color.Black,
-    secondary = LavenderMain,
+    primary = SakuraPinkDark,
+    onPrimary = Color.White,
+    primaryContainer = SakuraPinkLight,
+    onPrimaryContainer = Color(0xFF450616),
+    secondary = SakuraPink,
     onSecondary = Color.White,
-    tertiary = ElectricBlue,
+    secondaryContainer = LightSurfaceContainerHigh,
+    onSecondaryContainer = LightOnSurface,
+    tertiary = SakuraAccent,
     background = LightBackground,
     surface = LightSurface,
     surfaceVariant = LightSurfaceVariant,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F)
+    surfaceContainerLowest = LightSurfaceContainerLowest,
+    surfaceContainerLow = LightSurfaceContainerLow,
+    surfaceContainer = LightSurfaceContainer,
+    surfaceContainerHigh = LightSurfaceContainerHigh,
+    surfaceContainerHighest = LightSurfaceContainerHighest,
+    outline = LightOutline,
+    outlineVariant = LightOutlineVariant,
+    onBackground = LightOnSurface,
+    onSurface = LightOnSurface,
+    onSurfaceVariant = LightOnSurfaceVariant
 )
 
 @Composable

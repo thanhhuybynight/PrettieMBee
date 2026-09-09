@@ -89,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         isMbInstalled = isMbInstalled,
                         targetPackage = targetPackage,
                         installedThemeCount = installedThemes.size,
+                        installedThemes = installedThemes,
                         communityThemes = communityThemes,
                         isThemeDownloaded = { theme -> themeRepository.isThemeDownloaded(theme) },
                         onRefreshStatus = { refreshAll() },
