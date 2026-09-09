@@ -7,7 +7,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Palette
@@ -142,7 +141,7 @@ fun ThemeDetailSheet(
 
             // TARGET MB THEME SELECTOR
             SegmentedGroup(
-                title = "VỊ TRÍ ÁP DỤNG TRONG MB BANK"
+                title = "Vị trí áp dụng trong MB Bank"
             ) {
                 Surface(
                     modifier = Modifier
@@ -161,14 +160,14 @@ fun ThemeDetailSheet(
                             Text(
                                 text = currentTargetName,
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "UUID: $currentTargetUuid",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
@@ -178,13 +177,13 @@ fun ThemeDetailSheet(
                                 text = "Đổi",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = "Change",
+                                contentDescription = "Đổi theme đích",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -197,12 +196,12 @@ fun ThemeDetailSheet(
 
             // OPTIONS GROUP
             SegmentedGroup(
-                title = "TUỲ CHỌN NẠP THEME"
+                title = "Tuỳ chọn áp dụng"
             ) {
                 if (theme.supportsPriority) {
                     SegmentedItem(
                         title = "Chế độ Priority",
-                        subtitle = "Tối ưu icon & màu sắc cho gói VIP Priority",
+                        subtitle = "Tối ưu biểu tượng và màu sắc cho gói VIP Priority",
                         icon = Icons.Rounded.Star,
                         iconTint = SakuraAccent,
                         showDivider = true,
@@ -220,8 +219,8 @@ fun ThemeDetailSheet(
                 }
 
                 SegmentedItem(
-                    title = "Mở trang Theme (Deeplink)",
-                    subtitle = "Tự mở MB Bank để nhấn 'Áp dụng'",
+                    title = "Mở MB Bank sau khi nạp",
+                    subtitle = "Tự chuyển đến trang chi tiết theme để áp dụng",
                     icon = Icons.Rounded.AutoAwesome,
                     iconTint = SakuraPink,
                     showDivider = false,
@@ -238,7 +237,7 @@ fun ThemeDetailSheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // CTA APPLY BUTTON
             Button(
@@ -253,26 +252,26 @@ fun ThemeDetailSheet(
                         )
                     )
                 },
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SakuraPink,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp)
+                    .height(52.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.AutoAwesome,
+                    imageVector = Icons.Rounded.Palette,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Áp Dụng Theme Ngay",
+                    text = "Áp dụng theme",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp
                     )
                 )
             }

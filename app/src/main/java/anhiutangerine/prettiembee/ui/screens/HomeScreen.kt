@@ -92,9 +92,9 @@ fun HomeScreen(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             title = {
                 Text(
-                    text = "Đổi Gói MB Bank Mục Tiêu",
+                    text = "Đổi gói MB Bank mục tiêu",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
             },
@@ -127,7 +127,7 @@ fun HomeScreen(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text("Lưu", fontWeight = FontWeight.Bold)
+                    Text("Lưu", fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -173,8 +173,8 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (selectedTab == 0) "Kho Theme Cộng Đồng" else "Trạng Thái & Hệ Thống",
-                                style = MaterialTheme.typography.labelSmall.copy(
+                                text = if (selectedTab == 0) "Kho theme cộng đồng" else "Trạng thái & cấu hình",
+                                style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 11.sp
                                 ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -186,9 +186,9 @@ fun HomeScreen(
                     if (selectedTab == 0) {
                         FilledTonalButton(
                             onClick = { zipPickerLauncher.launch("application/zip") },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 contentColor = MaterialTheme.colorScheme.primary
                             ),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
@@ -201,7 +201,7 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Nạp ZIP",
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp
                             )
                         }
@@ -340,22 +340,23 @@ fun HomeScreen(
                         // Section Header
                         item {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = if (selectedCategory == "Tất cả") "Tất Cả Gói Theme" else selectedCategory,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.primary
+                                    text = if (selectedCategory == "Tất cả") "Tất cả theme" else selectedCategory,
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 )
                                 Text(
                                     text = "${filteredThemes.size} theme",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
                                 )
                             }
                         }
@@ -395,7 +396,7 @@ fun HomeScreen(
                         // Configuration Group
                         item {
                             SegmentedGroup(
-                                title = "CẤU HÌNH GÓI MB BANK"
+                                title = "Cấu hình MB Bank"
                             ) {
                                 SegmentedItem(
                                     title = "Package mục tiêu",
@@ -435,7 +436,7 @@ fun HomeScreen(
                         // Installed Themes in Target Package Group
                         item {
                             SegmentedGroup(
-                                title = "THEME PHÁT HIỆN TRONG $targetPackage"
+                                title = "Theme đã phát hiện ($targetPackage)"
                             ) {
                                 if (installedThemes.isEmpty()) {
                                     Box(
@@ -468,7 +469,7 @@ fun HomeScreen(
                         // About Group
                         item {
                             SegmentedGroup(
-                                title = "THÔNG TIN ỨNG DỤNG"
+                                title = "Thông tin ứng dụng"
                             ) {
                                 SegmentedItem(
                                     title = "PrettieMBee",

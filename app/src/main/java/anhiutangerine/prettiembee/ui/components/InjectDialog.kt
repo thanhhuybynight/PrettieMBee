@@ -99,12 +99,12 @@ fun InjectDialog(
 
                 Text(
                     text = when {
-                        isRunning -> "Đang Nạp Theme..."
-                        result?.isSuccess == true -> "Nạp Theme Thành Công!"
-                        else -> "Có Lỗi Xảy Ra!"
+                        isRunning -> "Đang áp dụng theme..."
+                        result?.isSuccess == true -> "Áp dụng theme thành công"
+                        else -> "Có lỗi xảy ra"
                     },
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 )
 
@@ -131,9 +131,9 @@ fun InjectDialog(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 11.sp,
                                 color = when {
-                                    logLine.contains("❌") -> ErrorRed
-                                    logLine.contains("✅") || logLine.contains("🎉") -> SuccessGreen
-                                    logLine.contains("✨") || logLine.contains("🐝") -> SakuraPink
+                                    logLine.contains("[Lỗi]") || logLine.contains("❌") -> ErrorRed
+                                    logLine.contains("[Thành công]") || logLine.contains("✅") -> SuccessGreen
+                                    logLine.contains("[Chuẩn bị]") || logLine.contains("[Thông tin]") -> SakuraPink
                                     else -> Color(0xFFDDDDDD)
                                 },
                                 lineHeight = 16.sp
@@ -147,7 +147,7 @@ fun InjectDialog(
                 if (!isRunning) {
                     Button(
                         onClick = onDismiss,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (result?.isSuccess == true) SuccessGreen else SakuraPink,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -155,8 +155,8 @@ fun InjectDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = if (result?.isSuccess == true) "Tuyệt Vời" else "Đóng",
-                            fontWeight = FontWeight.Bold
+                            text = if (result?.isSuccess == true) "Hoàn tất" else "Đóng",
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }

@@ -101,63 +101,63 @@ class RootRepository(private val context: Context) {
         }
 
         try {
-            log("🐝 Bắt đầu nạp theme ${config.sourceTheme.name}...")
-            log("🎯 Gói mục tiêu: $targetPackage")
+            log("[Chuẩn bị] Bắt đầu nạp theme: ${config.sourceTheme.name}")
+            log("[Thông tin] Ứng dụng mục tiêu: $targetPackage")
 
             // 1. Force stop MB Bank
-            log("🛑 Buộc dừng ứng dụng $targetPackage...")
+            log("[Tiến trình] Dừng ứng dụng $targetPackage...")
             Shell.cmd("am force-stop $targetPackage").exec()
 
             // 2. Query UID/GID
-            log("🔍 Kiểm tra phân quyền của $targetPackage...")
+            log("[Tiến trình] Kiểm tra định danh ứng dụng (UID/GID)...")
             val uidRes = Shell.cmd("stat -c '%u:%g' /data/data/$targetPackage").exec()
             val uidGid = uidRes.out.firstOrNull()?.trim()
             if (uidGid.isNullOrBlank() || !uidGid.contains(":")) {
                 val err = "Không thể lấy UID/GID của $targetPackage. Ứng dụng đã được cài đặt chưa?"
-                log("❌ $err")
+                log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
-            log("✅ UID/GID của ứng dụng: $uidGid")
+            log("[Thông tin] UID/GID ứng dụng: $uidGid")
 
             // 3. Verify source theme assets on disk
             val sourceImages = File(themeDir, "images")
             val sourceThemeFolder = File(themeDir, "theme")
             val tokenFile = if (config.usePriorityVariant && File(sourceThemeFolder, "token_priority.json").exists()) {
-                log("✨ Kích hoạt biến thể Priority Tokens...")
+                log("[Tiến trình] Áp dụng cấu hình Priority Tokens...")
                 File(sourceThemeFolder, "token_priority.json")
             } else {
                 File(sourceThemeFolder, "token.json")
             }
 
             if (!sourceImages.exists() || !tokenFile.exists()) {
-                val err = "Thiếu asset tại ${themeDir.absolutePath}"
-                log("❌ $err")
+                val err = "Thiếu tài nguyên theme tại ${themeDir.absolutePath}"
+                log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
 
             // 4. Target folder
             val targetDir = "$mbThemeBase/${config.targetUuid}"
-            log("📁 Chuẩn bị thư mục đích: $targetDir")
+            log("[Tiến trình] Chuẩn bị thư mục đích: $targetDir")
             Shell.cmd(
                 "mkdir -p '$targetDir/images'",
                 "mkdir -p '$targetDir/theme'"
             ).exec()
 
             // 5. Copy from source to target using root
-            log("🚀 Đang ghi đè asset vào thư mục theme của MB Bank...")
+            log("[Tiến trình] Ghi đè tài nguyên vào thư mục theme của MB Bank...")
             val copyCmd = Shell.cmd(
                 "cp -rf '${sourceImages.absolutePath}/'* '$targetDir/images/'",
                 "cp -f '${tokenFile.absolutePath}' '$targetDir/theme/token.json'"
             ).exec()
 
             if (!copyCmd.isSuccess) {
-                val err = "Lỗi khi sao chép file: ${copyCmd.err.joinToString("\n")}"
-                log("❌ $err")
+                val err = "Lỗi sao chép tập tin: ${copyCmd.err.joinToString("\n")}"
+                log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
 
             // 6. Fix permissions and ownership
-            log("🔒 Thiết lập quyền hạn và chủ sở hữu ($uidGid)...")
+            log("[Tiến trình] Phân quyền hạn và chủ sở hữu ($uidGid)...")
             Shell.cmd(
                 "chown -R $uidGid '$targetDir'",
                 "chmod -R 755 '$targetDir'",
@@ -166,25 +166,25 @@ class RootRepository(private val context: Context) {
             ).exec()
 
             // 7. Restore SELinux context
-            log("🛡️ Phục hồi ngữ cảnh SELinux (restorecon)...")
+            log("[Tiến trình] Phục hồi ngữ cảnh SELinux (restorecon)...")
             Shell.cmd("restorecon -R '$targetDir'").exec()
 
-            log("🎉 Nạp theme thành công 100%!")
+            log("[Thành công] Nạp theme hoàn tất.")
 
             // 8. Launch post-actions
             if (config.autoLaunchDeeplink) {
-                log("🔗 Mở trang chi tiết Theme trong MB Bank...")
+                log("[Hành động] Mở trang chi tiết theme trong MB Bank...")
                 val deeplink = "mbbank://installingnew?af_force_deeplink=true&ad_dp=theme_detail&id=${config.targetUuid}"
                 Shell.cmd("am start -a android.intent.action.VIEW -d '$deeplink' $targetPackage").exec()
             } else if (config.autoLaunchMb) {
-                log("🚀 Khởi chạy lại MB Bank...")
+                log("[Hành động] Khởi chạy lại ứng dụng MB Bank...")
                 Shell.cmd("am start -n $targetPackage/io.flutter.plugins.MainActivity").exec()
             }
 
             return@withContext InjectResult(true, logs)
         } catch (e: Exception) {
-            val err = "Lỗi ngoại lệ: ${e.message}"
-            log("❌ $err")
+            val err = "Ngoại lệ: ${e.message}"
+            log("[Lỗi] $err")
             return@withContext InjectResult(false, logs, err)
         }
     }

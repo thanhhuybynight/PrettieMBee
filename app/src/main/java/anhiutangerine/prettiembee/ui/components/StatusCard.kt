@@ -64,8 +64,8 @@ fun StatusCard(
 
             // Main Status Headline
             Text(
-                text = if (isRootGranted) "Sẵn Sàng Hoạt Động" else "Chưa Cấp Quyền Root",
-                style = MaterialTheme.typography.headlineSmall.copy(
+                text = if (isRootGranted) "Sẵn sàng hoạt động" else "Chưa có quyền root",
+                style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 ),
@@ -75,7 +75,7 @@ fun StatusCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = if (isRootGranted) "Đã phát hiện quyền SuperUser trên thiết bị" else "Vui lòng cấp quyền Root (Magisk/KernelSU/APatch)",
+                text = if (isRootGranted) "Quyền SuperUser đã sẵn sàng để áp dụng theme" else "Cần cấp quyền root qua Magisk, KernelSU hoặc APatch",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
             )
@@ -96,25 +96,25 @@ fun StatusCard(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 StatusPill(
-                    label = if (isMbInstalled) "MB: Đã cài" else "MB: Chưa tìm thấy",
+                    label = if (isMbInstalled) "MB Bank: Đã cài" else "MB Bank: Chưa cài",
                     isPositive = isMbInstalled
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
                 ) {
                     Text(
-                        text = "$installedThemeCount theme máy",
+                        text = "$installedThemeCount theme trong app",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }

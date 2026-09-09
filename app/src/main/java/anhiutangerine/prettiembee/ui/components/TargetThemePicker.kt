@@ -52,9 +52,9 @@ fun TargetThemePickerBottomSheet(
                 .padding(bottom = 28.dp)
         ) {
             Text(
-                text = "Chọn Theme Đích MB Bank",
+                text = "Chọn theme đích MB Bank",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 ),
                 color = MaterialTheme.colorScheme.onSurface
