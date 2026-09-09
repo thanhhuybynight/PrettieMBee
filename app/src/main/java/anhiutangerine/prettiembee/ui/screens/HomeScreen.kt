@@ -156,7 +156,7 @@ fun HomeScreen(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Image(
-                                    painter = painterResource(id = R.mipmap.ic_launcher),
+                                    painter = painterResource(id = R.drawable.ic_prettiembee_logo),
                                     contentDescription = "Logo",
                                     modifier = Modifier.size(28.dp)
                                 )

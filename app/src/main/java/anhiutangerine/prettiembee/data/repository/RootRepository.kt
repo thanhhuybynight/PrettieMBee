@@ -26,37 +26,45 @@ class RootRepository(private val context: Context) {
     }
 
     suspend fun isMbInstalled(): Boolean = withContext(Dispatchers.IO) {
-        val res = Shell.cmd("pm path $targetPackage").exec()
-        res.isSuccess && res.out.any { it.contains("package:") }
+        try {
+            val res = Shell.cmd("pm path $targetPackage").exec()
+            res.isSuccess && res.out.any { it.contains("package:") }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     suspend fun getInstalledThemes(storeCatalog: List<MbStoreTheme>): List<InstalledTheme> = withContext(Dispatchers.IO) {
-        val resultList = mutableListOf<InstalledTheme>()
-        val listRes = Shell.cmd("ls -1 $mbThemeBase 2>/dev/null").exec()
-        if (!listRes.isSuccess || listRes.out.isEmpty()) return@withContext emptyList()
+        try {
+            val resultList = mutableListOf<InstalledTheme>()
+            val listRes = Shell.cmd("ls -1 $mbThemeBase 2>/dev/null").exec()
+            if (!listRes.isSuccess || listRes.out.isEmpty()) return@withContext emptyList()
 
-        for (uuid in listRes.out) {
-            val cleanUuid = uuid.trim()
-            if (cleanUuid.isBlank() || !cleanUuid.contains("-")) continue
+            for (uuid in listRes.out) {
+                val cleanUuid = uuid.trim()
+                if (cleanUuid.isBlank() || !cleanUuid.contains("-")) continue
 
-            val countRes = Shell.cmd("ls -1 $mbThemeBase/$cleanUuid/images/*.png 2>/dev/null | wc -l").exec()
-            val imgCount = countRes.out.firstOrNull()?.trim()?.toIntOrNull() ?: 0
+                val countRes = Shell.cmd("ls -1 $mbThemeBase/$cleanUuid/images/*.png 2>/dev/null | wc -l").exec()
+                val imgCount = countRes.out.firstOrNull()?.trim()?.toIntOrNull() ?: 0
 
-            val tokenRes = Shell.cmd("test -f $mbThemeBase/$cleanUuid/theme/token.json && echo 1 || echo 0").exec()
-            val hasToken = tokenRes.out.firstOrNull()?.trim() == "1"
+                val tokenRes = Shell.cmd("test -f $mbThemeBase/$cleanUuid/theme/token.json && echo 1 || echo 0").exec()
+                val hasToken = tokenRes.out.firstOrNull()?.trim() == "1"
 
-            val matchedStoreTheme = storeCatalog.find { it.uuid.equals(cleanUuid, ignoreCase = true) }
+                val matchedStoreTheme = storeCatalog.find { it.uuid.equals(cleanUuid, ignoreCase = true) }
 
-            resultList.add(
-                InstalledTheme(
-                    uuid = cleanUuid,
-                    storeTheme = matchedStoreTheme,
-                    imageCount = imgCount,
-                    hasTokenJson = hasToken
+                resultList.add(
+                    InstalledTheme(
+                        uuid = cleanUuid,
+                        storeTheme = matchedStoreTheme,
+                        imageCount = imgCount,
+                        hasTokenJson = hasToken
+                    )
                 )
-            )
+            }
+            resultList
+        } catch (e: Exception) {
+            emptyList()
         }
-        resultList
     }
 
     suspend fun backupTheme(targetUuid: String): Boolean = withContext(Dispatchers.IO) {
