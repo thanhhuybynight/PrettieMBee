@@ -1,15 +1,17 @@
 package anhiutangerine.prettiembee.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,10 +27,53 @@ import anhiutangerine.prettiembee.ui.theme.ErrorRed
 fun StatusCard(
     isRootGranted: Boolean,
     isMbInstalled: Boolean,
+    targetPackage: String,
     installedThemeCount: Int,
     onRefresh: () -> Unit,
+    onChangePackage: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showPackageDialog by remember { mutableStateOf(false) }
+    var tempPackageInput by remember { mutableStateOf(targetPackage) }
+
+    if (showPackageDialog) {
+        AlertDialog(
+            onDismissRequest = { showPackageDialog = false },
+            title = { Text("Đổi Gói MB Bank Mục Tiêu", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        text = "Mặc định là 'com.mbmobile'. Nếu bạn dùng ứng dụng kép (Dual App) hoặc bản Clone, hãy nhập package tương ứng:",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = tempPackageInput,
+                        onValueChange = { tempPackageInput = it.trim() },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onChangePackage(tempPackageInput)
+                        showPackageDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = HoneyAmber, contentColor = Color.Black)
+                ) {
+                    Text("Lưu", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPackageDialog = false }) {
+                    Text("Huỷ")
+                }
+            }
+        )
+    }
+
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -71,7 +116,6 @@ fun StatusCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Root Status Chip
                 StatusItem(
                     title = "Quyền Root",
                     statusText = if (isRootGranted) "Đã cấp" else "Chưa có",
@@ -79,11 +123,14 @@ fun StatusCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                // MB Bank Status Chip
                 StatusItem(
-                    title = "MB Bank",
-                    statusText = if (isMbInstalled) "Đã cài đặt" else "Chưa thấy",
+                    title = "MB Package",
+                    statusText = targetPackage,
                     isSuccess = isMbInstalled,
+                    onEdit = {
+                        tempPackageInput = targetPackage
+                        showPackageDialog = true
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -103,7 +150,7 @@ fun StatusCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Theme MB phát hiện trên máy:",
+                        text = "Theme phát hiện trong $targetPackage:",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
@@ -125,12 +172,13 @@ private fun StatusItem(
     title: String,
     statusText: String,
     isSuccess: Boolean,
+    onEdit: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        modifier = modifier
+        modifier = modifier.then(if (onEdit != null) Modifier.clickable(onClick = onEdit) else Modifier)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -151,7 +199,7 @@ private fun StatusItem(
                     modifier = Modifier.size(18.dp)
                 )
             }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelSmall,
@@ -161,9 +209,18 @@ private fun StatusItem(
                     text = statusText,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
+                        fontSize = 12.sp
                     ),
+                    maxLines = 1,
                     color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            if (onEdit != null) {
+                Icon(
+                    imageVector = Icons.Rounded.Edit,
+                    contentDescription = "Edit",
+                    tint = HoneyAmber,
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }

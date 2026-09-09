@@ -1,6 +1,8 @@
 package anhiutangerine.prettiembee
 
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +22,7 @@ import anhiutangerine.prettiembee.ui.screens.HomeScreen
 import anhiutangerine.prettiembee.ui.screens.ThemeDetailSheet
 import anhiutangerine.prettiembee.ui.theme.PrettieMBeeTheme
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -38,6 +41,7 @@ class MainActivity : ComponentActivity() {
 
                 var isRootGranted by remember { mutableStateOf(false) }
                 var isMbInstalled by remember { mutableStateOf(false) }
+                var targetPackage by remember { mutableStateOf(rootRepository.targetPackage) }
                 var installedThemes by remember { mutableStateOf<List<InstalledTheme>>(emptyList()) }
                 var communityThemes by remember { mutableStateOf<List<CommunityTheme>>(emptyList()) }
                 var storeThemes by remember { mutableStateOf<List<MbStoreTheme>>(emptyList()) }
@@ -48,7 +52,7 @@ class MainActivity : ComponentActivity() {
 
                 var isTargetPickerOpen by remember { mutableStateOf(false) }
 
-                // Injection state
+                // Injection & Download state
                 var isInjecting by remember { mutableStateOf(false) }
                 var isInjectDialogOpen by remember { mutableStateOf(false) }
                 val injectLogs = remember { mutableStateListOf<String>() }
@@ -57,6 +61,7 @@ class MainActivity : ComponentActivity() {
                 // Function to refresh state
                 val refreshAll = {
                     coroutineScope.launch {
+                        rootRepository.targetPackage = targetPackage
                         isRootGranted = rootRepository.isRootAvailable()
                         isMbInstalled = rootRepository.isMbInstalled()
                         val loadedStore = themeRepository.getStoreThemes()
@@ -74,7 +79,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(Unit) {
+                LaunchedEffect(targetPackage) {
                     refreshAll()
                 }
 
@@ -82,15 +87,35 @@ class MainActivity : ComponentActivity() {
                     HomeScreen(
                         isRootGranted = isRootGranted,
                         isMbInstalled = isMbInstalled,
+                        targetPackage = targetPackage,
                         installedThemeCount = installedThemes.size,
                         communityThemes = communityThemes,
+                        isThemeDownloaded = { theme -> themeRepository.isThemeDownloaded(theme) },
                         onRefreshStatus = { refreshAll() },
+                        onChangePackage = { newPkg ->
+                            targetPackage = newPkg
+                            rootRepository.targetPackage = newPkg
+                        },
                         onSelectTheme = { theme ->
                             selectedThemeForDetail = theme
-                            // If target theme matches default target UUID, set display name
                             storeThemes.find { it.uuid.equals(theme.defaultTargetUuid, ignoreCase = true) }?.let { match ->
                                 currentTargetUuid = match.uuid
                                 currentTargetName = match.displayName
+                            }
+                        },
+                        onImportZip = { uri, fileName ->
+                            coroutineScope.launch {
+                                Toast.makeText(applicationContext, "Đang xử lý file ZIP...", Toast.LENGTH_SHORT).show()
+                                val res = themeRepository.importCustomZip(uri, fileName)
+                                if (res.isSuccess) {
+                                    Toast.makeText(applicationContext, "Nạp theme thành công!", Toast.LENGTH_SHORT).show()
+                                    communityThemes = themeRepository.getCommunityThemes()
+                                    res.getOrNull()?.let { imported ->
+                                        selectedThemeForDetail = imported
+                                    }
+                                } else {
+                                    Toast.makeText(applicationContext, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
                     )
@@ -110,7 +135,28 @@ class MainActivity : ComponentActivity() {
                                 injectResult = null
 
                                 coroutineScope.launch {
-                                    val res = rootRepository.injectTheme(config) { logMsg ->
+                                    // Check if theme files exist locally
+                                    var themeDir = themeRepository.getThemeDir(config.sourceTheme.id)
+                                    if (!themeRepository.isThemeDownloaded(config.sourceTheme)) {
+                                        injectLogs.add("📥 Theme chưa có sẵn trong máy. Đang tải từ máy chủ...")
+                                        val dlRes = themeRepository.downloadTheme(config.sourceTheme) { progress ->
+                                            if ((progress * 100).toInt() % 25 == 0) {
+                                                injectLogs.add("⏳ Đang tải: ${(progress * 100).toInt()}%")
+                                            }
+                                        }
+                                        if (dlRes.isFailure) {
+                                            val err = "Tải theme thất bại: ${dlRes.exceptionOrNull()?.message}"
+                                            injectLogs.add("❌ $err")
+                                            injectResult = InjectResult(false, injectLogs, err)
+                                            isInjecting = false
+                                            return@launch
+                                        }
+                                        themeDir = dlRes.getOrThrow()
+                                        injectLogs.add("✅ Đã tải và giải nén theme thành công!")
+                                    }
+
+                                    // Run Root Injection
+                                    val res = rootRepository.injectTheme(config, themeDir) { logMsg ->
                                         injectLogs.add(logMsg)
                                     }
                                     injectResult = res

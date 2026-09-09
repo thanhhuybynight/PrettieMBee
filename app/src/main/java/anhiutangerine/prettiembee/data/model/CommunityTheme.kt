@@ -11,6 +11,7 @@ data class CommunityTheme(
     val description: String = "",
     val defaultTargetUuid: String,
     val supportsPriority: Boolean = false,
-    val previewAsset: String? = null,
-    val assetDir: String
+    val downloadUrl: String? = null,
+    val fileSize: String = "",
+    val isCustomImport: Boolean = false
 )
