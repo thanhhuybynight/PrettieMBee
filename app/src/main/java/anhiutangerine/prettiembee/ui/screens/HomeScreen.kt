@@ -533,39 +533,12 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    when (selectedTab) {
-                        0, 2 -> {
-                            IconButton(onClick = onRefreshStatus) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Refresh,
-                                    contentDescription = "Refresh",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        1 -> {
-                            FilledTonalButton(
-                                onClick = { zipPickerLauncher.launch("application/zip") },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                ),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.FolderOpen,
-                                    contentDescription = "Import ZIP",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Nạp ZIP",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
+                    IconButton(onClick = onRefreshStatus) {
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = "Refresh",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 },
@@ -1245,9 +1218,9 @@ fun HomeScreen(
                 }
             }
 
-            // Floating ZIP Import Button above navbar (Settings tab only)
+            // Floating ZIP Import Button above navbar (Kho theme tab only)
             AnimatedVisibility(
-                visible = selectedTab == 2 && !isScrollingDown.value,
+                visible = selectedTab == 1 && !isScrollingDown.value,
                 enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
                 exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
                 modifier = Modifier
