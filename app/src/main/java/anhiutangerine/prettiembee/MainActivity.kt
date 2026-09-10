@@ -136,7 +136,8 @@ class MainActivity : ComponentActivity() {
                                 themeRepository.deleteDownloadedTheme(theme)
                                 downloadedThemeIds = downloadedThemeIds - theme.id
                                 if (theme.isCustomImport) {
-                                    communityThemes = themeRepository.getCommunityThemes()
+                                    // getCommunityThemes is suspend (network); drop the custom entry locally
+                                    communityThemes = communityThemes.filterNot { it.id == theme.id }
                                 }
                             },
                             onImportZip = { uri, fileName ->
