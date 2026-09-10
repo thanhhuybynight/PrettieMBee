@@ -1146,7 +1146,7 @@ fun HomeScreen(
 
                                     SegmentedItem(
                                         title = "Thư mục lưu trữ theme",
-                                        subtitle = "/data/data/anhiutangerine.prettiembee/files/themes",
+                                        subtitle = context.filesDir.resolve("themes").absolutePath,
                                         icon = Icons.Rounded.Storage,
                                         iconTint = MaterialTheme.colorScheme.primary,
                                         showDivider = false
