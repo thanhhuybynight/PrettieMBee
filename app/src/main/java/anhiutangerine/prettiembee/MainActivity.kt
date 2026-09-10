@@ -145,6 +145,9 @@ class MainActivity : ComponentActivity() {
                                         Toast.makeText(applicationContext, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                                     }
                                 }
+                            },
+                            onResetThemes = {
+                                rootRepository.resetAllThemes()
                             }
                         )
                     }

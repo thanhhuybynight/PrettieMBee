@@ -29,7 +29,9 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Edit
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.FormatColorFill
 import androidx.compose.material.icons.rounded.Info
@@ -120,15 +122,19 @@ fun HomeScreen(
     onChangePackage: (String) -> Unit,
     onSelectTheme: (CommunityTheme) -> Unit,
     onImportZip: (Uri, String) -> Unit,
+    onResetThemes: (suspend () -> Result<Unit>)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedCategory by remember { mutableStateOf("Tất cả") }
     var searchQuery by remember { mutableStateOf("") }
     var showPackageDialog by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
     var showDpiDialog by remember { mutableStateOf(false) }
+    var showResetConfirmDialog by remember { mutableStateOf(false) }
+    var isResettingThemes by remember { mutableStateOf(false) }
     var tempPackageInput by remember { mutableStateOf(targetPackage) }
     var tempDpiInput by remember { mutableIntStateOf(ThemeConfig.appDpi) }
 
@@ -397,6 +403,78 @@ fun HomeScreen(
                 TextButton(
                     onClick = { showDpiDialog = false },
                     shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Huỷ")
+                }
+            }
+        )
+    }
+
+    if (showResetConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isResettingThemes) showResetConfirmDialog = false
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = {
+                Text(
+                    text = "Khôi phục theme mặc định?",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
+            text = {
+                Text(
+                    text = "Thao tác này sẽ đóng ứng dụng MB Bank và xoá sạch toàn bộ các theme tuỳ chỉnh đã cài đặt, đưa giao diện MB Bank về mặc định ban đầu của ngân hàng.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (onResetThemes != null) {
+                            coroutineScope.launch {
+                                isResettingThemes = true
+                                val res = onResetThemes()
+                                isResettingThemes = false
+                                showResetConfirmDialog = false
+                                if (res.isSuccess) {
+                                    Toast.makeText(context, "Đã xoá toàn bộ theme và khôi phục mặc định thành công!", Toast.LENGTH_LONG).show()
+                                    onRefreshStatus()
+                                } else {
+                                    val err = res.exceptionOrNull()?.message ?: "Thao tác thất bại"
+                                    Toast.makeText(context, "Lỗi: $err", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ),
+                    enabled = !isResettingThemes
+                ) {
+                    if (isResettingThemes) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text("Xoá và khôi phục", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showResetConfirmDialog = false },
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isResettingThemes
                 ) {
                     Text("Huỷ")
                 }
@@ -1149,6 +1227,28 @@ fun HomeScreen(
                                         subtitle = context.filesDir.resolve("themes").absolutePath,
                                         icon = Icons.Rounded.Storage,
                                         iconTint = MaterialTheme.colorScheme.primary,
+                                        showDivider = true
+                                    )
+
+                                    SegmentedItem(
+                                        title = "Xoá toàn bộ theme MB Bank",
+                                        subtitle = "Gỡ bỏ tất cả theme đã nạp và hoàn tác về mặc định",
+                                        icon = Icons.Rounded.DeleteForever,
+                                        iconTint = MaterialTheme.colorScheme.error,
+                                        onClick = {
+                                            if (!isRootGranted) {
+                                                Toast.makeText(context, "Yêu cầu quyền root để thực hiện!", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                showResetConfirmDialog = true
+                                            }
+                                        },
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Xoá theme",
+                                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                            )
+                                        },
                                         showDivider = false
                                     )
                                 }

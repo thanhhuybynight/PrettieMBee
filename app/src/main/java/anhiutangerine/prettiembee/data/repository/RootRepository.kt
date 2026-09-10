@@ -319,46 +319,7 @@ class RootRepository(private val context: Context) {
 
             // 3. Query UID/GID with multi-tier fallback
             log("[Tiến trình] Kiểm tra định danh ứng dụng (UID/GID)...")
-            var uidGid: String? = null
-
-            // Strategy 1: stat -c '%u:%g' on dataDir
-            val uidRes = Shell.cmd("stat -c '%u:%g' '$dataDir' 2>/dev/null").exec()
-            val statOut = uidRes.out.firstOrNull()?.trim()
-            if (!statOut.isNullOrBlank() && statOut.contains(":") && !statOut.startsWith("0:0")) {
-                uidGid = statOut
-            }
-
-            // Strategy 2: pm list packages -U
-            if (uidGid == null) {
-                val pmRes = Shell.cmd("pm list packages -U $targetPackage 2>/dev/null").exec()
-                val match = pmRes.out.firstOrNull { it.contains("uid:") }
-                val uid = match?.substringAfter("uid:")?.trim()?.takeWhile { it.isDigit() }
-                if (!uid.isNullOrBlank()) {
-                    uidGid = "$uid:$uid"
-                }
-            }
-
-            // Strategy 3: dumpsys package userId=
-            if (uidGid == null) {
-                val dumpRes = Shell.cmd("dumpsys package $targetPackage 2>/dev/null | grep -m 1 'userId='").exec()
-                val userId = dumpRes.out.firstOrNull()?.substringAfter("userId=")?.trim()?.takeWhile { it.isDigit() }
-                if (!userId.isNullOrBlank()) {
-                    uidGid = "$userId:$userId"
-                }
-            }
-
-            // Strategy 4: stat on APK path
-            if (uidGid == null) {
-                val pathRes = Shell.cmd("pm path $targetPackage 2>/dev/null").exec()
-                val apkPath = pathRes.out.firstOrNull { it.startsWith("package:") }?.substringAfter("package:")?.trim()
-                if (!apkPath.isNullOrBlank()) {
-                    val apkStat = Shell.cmd("stat -c '%u:%g' '$apkPath' 2>/dev/null").exec()
-                    val resUid = apkStat.out.firstOrNull()?.trim()
-                    if (!resUid.isNullOrBlank() && resUid.contains(":")) {
-                        uidGid = resUid
-                    }
-                }
-            }
+            val uidGid = resolveUidGid(dataDir)
 
             if (uidGid.isNullOrBlank() || !uidGid.contains(":")) {
                 val err = "Không thể lấy UID/GID của $targetPackage. Hãy đảm bảo MB Bank đã được cài đặt và mở ít nhất một lần!"
@@ -518,6 +479,81 @@ class RootRepository(private val context: Context) {
                 Shell.cmd("am start -n $targetPackage/io.flutter.plugins.MainActivity").exec()
             }
         } catch (_: Exception) {}
+    }
+
+    suspend fun resolveUidGid(dataDir: String): String? = withContext(Dispatchers.IO) {
+        // Strategy 1: stat -c '%u:%g' on dataDir
+        val uidRes = Shell.cmd("stat -c '%u:%g' '$dataDir' 2>/dev/null").exec()
+        val statOut = uidRes.out.firstOrNull()?.trim()
+        if (!statOut.isNullOrBlank() && statOut.contains(":") && !statOut.startsWith("0:0")) {
+            return@withContext statOut
+        }
+
+        // Strategy 2: pm list packages -U
+        val pmRes = Shell.cmd("pm list packages -U $targetPackage 2>/dev/null").exec()
+        val match = pmRes.out.firstOrNull { it.contains("uid:") }
+        val uid = match?.substringAfter("uid:")?.trim()?.takeWhile { it.isDigit() }
+        if (!uid.isNullOrBlank()) {
+            return@withContext "$uid:$uid"
+        }
+
+        // Strategy 3: dumpsys package userId=
+        val dumpRes = Shell.cmd("dumpsys package $targetPackage 2>/dev/null | grep -m 1 'userId='").exec()
+        val userId = dumpRes.out.firstOrNull()?.substringAfter("userId=")?.trim()?.takeWhile { it.isDigit() }
+        if (!userId.isNullOrBlank()) {
+            return@withContext "$userId:$userId"
+        }
+
+        // Strategy 4: stat on APK path
+        val pathRes = Shell.cmd("pm path $targetPackage 2>/dev/null").exec()
+        val apkPath = pathRes.out.firstOrNull { it.startsWith("package:") }?.substringAfter("package:")?.trim()
+        if (!apkPath.isNullOrBlank()) {
+            val apkStat = Shell.cmd("stat -c '%u:%g' '$apkPath' 2>/dev/null").exec()
+            val resUid = apkStat.out.firstOrNull()?.trim()
+            if (!resUid.isNullOrBlank() && resUid.contains(":")) {
+                return@withContext resUid
+            }
+        }
+
+        null
+    }
+
+    suspend fun resetAllThemes(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            if (!isRootAvailable()) {
+                return@withContext Result.failure(Exception("Ứng dụng chưa được cấp quyền Root!"))
+            }
+
+            // 1. Force stop MB Bank
+            Shell.cmd("am force-stop $targetPackage").exec()
+
+            // 2. Resolve dataDir and paths
+            val dataDir = resolveDataDir()
+            val themeBase = "$dataDir/app_flutter/app_theme"
+            val uidGid = resolveUidGid(dataDir)
+
+            // 3. Clear all custom themes and prepare clean structure
+            val chownCmd = if (!uidGid.isNullOrBlank()) "chown -R $uidGid '$themeBase' 2>/dev/null || true" else ""
+            val resetScript = """
+                exec 2>&1
+                rm -rf '$themeBase'
+                mkdir -p '$themeBase/unzip'
+                $chownCmd
+                chmod 755 '$dataDir/app_flutter' 2>/dev/null || true
+                chmod 755 '$themeBase' 2>/dev/null || true
+                chmod 755 '$themeBase/unzip' 2>/dev/null || true
+            """.trimIndent()
+
+            val res = Shell.cmd(resetScript).exec()
+            if (!res.isSuccess) {
+                val err = (res.out + res.err).filter { it.isNotBlank() }.joinToString("\n")
+                return@withContext Result.failure(Exception("Không thể dọn dẹp thư mục theme: $err"))
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
 
