@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FolderOpen
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
@@ -463,33 +462,6 @@ fun HomeScreen(
                                         )
                                     }
                                 }
-                            }
-                        }
-
-                        // About Group
-                        item {
-                            SegmentedGroup(
-                                title = "Thông tin ứng dụng"
-                            ) {
-                                SegmentedItem(
-                                    title = "PrettieMBee",
-                                    subtitle = "Phiên bản 1.0.0 • anhiutangerine.prettiembee",
-                                    icon = Icons.Rounded.Info,
-                                    iconTint = MaterialTheme.colorScheme.primary,
-                                    showDivider = true
-                                )
-
-                                SegmentedItem(
-                                    title = "Theme Data",
-                                    subtitle = "Nguồn tài nguyên từ repo cộng đồng mbcp (disroot.org)",
-                                    showDivider = true
-                                )
-
-                                SegmentedItem(
-                                    title = "UI Aesthetic",
-                                    subtitle = "Thiết kế lấy cảm hứng từ phong cách tối giản của KittiSU",
-                                    showDivider = false
-                                )
                             }
                         }
                     }
