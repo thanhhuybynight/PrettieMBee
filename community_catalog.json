@@ -1,0 +1,79 @@
+[
+  {
+    "id": "furina",
+    "name": "Furina (Regina of Waters)",
+    "series": "Genshin Impact",
+    "author": "MBCP Community",
+    "description": "Theme Furina thuỷ thần Fontaine với tông màu xanh dương quý phái và icon cách điệu.",
+    "defaultTargetUuid": "aa3cb89a-8325-41b4-b59b-dfaea086cf80",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/furina.zip",
+    "fileSize": "7.4 MB"
+  },
+  {
+    "id": "elysia",
+    "name": "Elysia (Miss Pink Elf)",
+    "series": "Honkai Impact 3rd",
+    "author": "MBCP Community",
+    "description": "Theme Elysia tông hồng pastel mộng mơ, rực rỡ và dịu mắt.",
+    "defaultTargetUuid": "3c8fca1c-5b39-46d8-bf1d-65d437ec2ca1",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/elysia.zip",
+    "fileSize": "10.8 MB"
+  },
+  {
+    "id": "hina",
+    "name": "Sorasaki Hina (Gehenna)",
+    "series": "Blue Archive",
+    "author": "MBCP Community",
+    "description": "Theme Hina trưởng ban kỷ luật Gehenna tông tím thẫm thanh lịch.",
+    "defaultTargetUuid": "d5fd30f8-00b5-444b-9bbf-3ac81a81cce4",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/hina.zip",
+    "fileSize": "30.6 MB"
+  },
+  {
+    "id": "seia",
+    "name": "Yurizono Seia (Tea Party)",
+    "series": "Blue Archive",
+    "author": "MBCP Community",
+    "description": "Theme Seia tông vàng ấm hoàng hôn quý tộc Trinity.",
+    "defaultTargetUuid": "24fcce47-dbb7-481f-81c6-19934e4c4616",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/seia.zip",
+    "fileSize": "5.9 MB"
+  },
+  {
+    "id": "pitchblack",
+    "name": "Pitch Black (True AMOLED Dark)",
+    "series": "Minimalist / Utility",
+    "author": "Fukiame",
+    "description": "Chế độ nền đen sâu thuần khiết (AMOLED) tối ưu pin và dịu mắt khi dùng ban đêm.",
+    "defaultTargetUuid": "3c8fca1c-5b39-46d8-bf1d-65d437ec2ca1",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/pitchblack.zip",
+    "fileSize": "4.0 MB"
+  },
+  {
+    "id": "march7th",
+    "name": "March 7th (Astral Express)",
+    "series": "Honkai: Star Rail",
+    "author": "MBCP Community",
+    "description": "Theme March 7th tông xanh băng tuyết và hồng năng động.",
+    "defaultTargetUuid": "22dea79d-fcc5-4bf2-957d-95eb5b4a3e76",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/march7th.zip",
+    "fileSize": "11.1 MB"
+  },
+  {
+    "id": "varesa",
+    "name": "Varesa Pastel",
+    "series": "Aesthetic",
+    "author": "MBCP Community",
+    "description": "Phong cách tối giản hiện đại với các dải màu chuyển sắc mượt mà.",
+    "defaultTargetUuid": "2c0d4a80-1afe-4076-b240-836a8d707430",
+    "supportsPriority": true,
+    "downloadUrl": "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/themes/varesa.zip",
+    "fileSize": "10.9 MB"
+  }
+]
