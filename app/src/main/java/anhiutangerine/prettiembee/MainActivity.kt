@@ -91,45 +91,63 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    HomeScreen(
-                        isRootGranted = isRootGranted,
-                        isMbInstalled = isMbInstalled,
-                        targetPackage = targetPackage,
-                        installedThemeCount = installedThemes.size,
-                        installedThemes = installedThemes,
-                        communityThemes = communityThemes,
-                        isThemeDownloaded = { theme -> themeRepository.isThemeDownloaded(theme) },
-                        onRefreshStatus = {
-                            Toast.makeText(applicationContext, "Đang làm mới dữ liệu và đồng bộ kho theme...", Toast.LENGTH_SHORT).show()
-                            refreshAll()
-                        },
-                        onChangePackage = { newPkg ->
-                            targetPackage = newPkg
-                            rootRepository.targetPackage = newPkg
-                        },
-                        onSelectTheme = { theme ->
-                            selectedThemeForDetail = theme
-                            storeThemes.find { it.uuid.equals(theme.defaultTargetUuid, ignoreCase = true) }?.let { match ->
-                                currentTargetUuid = match.uuid
-                                currentTargetName = match.displayName
+                    if (isFlashScreenOpen && activeInstallConfig != null) {
+                        FlashScreen(
+                            config = activeInstallConfig!!,
+                            currentTargetName = activeTargetName,
+                            logs = injectLogs,
+                            status = flashingStatus,
+                            failedReason = flashFailedReason,
+                            onBack = { isFlashScreenOpen = false },
+                            onLaunchMb = {
+                                rootRepository.launchMbBank(
+                                    useDeeplink = activeInstallConfig?.autoLaunchDeeplink == true,
+                                    targetUuid = activeInstallConfig?.targetUuid
+                                )
+                                isFlashScreenOpen = false
                             }
-                        },
-                        onImportZip = { uri, fileName ->
-                            coroutineScope.launch {
-                                Toast.makeText(applicationContext, "Đang xử lý file ZIP...", Toast.LENGTH_SHORT).show()
-                                val res = themeRepository.importCustomZip(uri, fileName)
-                                if (res.isSuccess) {
-                                    Toast.makeText(applicationContext, "Nạp theme thành công!", Toast.LENGTH_SHORT).show()
-                                    communityThemes = themeRepository.getCommunityThemes()
-                                    res.getOrNull()?.let { imported ->
-                                        selectedThemeForDetail = imported
+                        )
+                    } else {
+                        HomeScreen(
+                            isRootGranted = isRootGranted,
+                            isMbInstalled = isMbInstalled,
+                            targetPackage = targetPackage,
+                            installedThemeCount = installedThemes.size,
+                            installedThemes = installedThemes,
+                            communityThemes = communityThemes,
+                            isThemeDownloaded = { theme -> themeRepository.isThemeDownloaded(theme) },
+                            onRefreshStatus = {
+                                Toast.makeText(applicationContext, "Đang làm mới dữ liệu và đồng bộ kho theme...", Toast.LENGTH_SHORT).show()
+                                refreshAll()
+                            },
+                            onChangePackage = { newPkg ->
+                                targetPackage = newPkg
+                                rootRepository.targetPackage = newPkg
+                            },
+                            onSelectTheme = { theme ->
+                                selectedThemeForDetail = theme
+                                storeThemes.find { it.uuid.equals(theme.defaultTargetUuid, ignoreCase = true) }?.let { match ->
+                                    currentTargetUuid = match.uuid
+                                    currentTargetName = match.displayName
+                                }
+                            },
+                            onImportZip = { uri, fileName ->
+                                coroutineScope.launch {
+                                    Toast.makeText(applicationContext, "Đang xử lý file ZIP...", Toast.LENGTH_SHORT).show()
+                                    val res = themeRepository.importCustomZip(uri, fileName)
+                                    if (res.isSuccess) {
+                                        Toast.makeText(applicationContext, "Nạp theme thành công!", Toast.LENGTH_SHORT).show()
+                                        communityThemes = themeRepository.getCommunityThemes()
+                                        res.getOrNull()?.let { imported ->
+                                            selectedThemeForDetail = imported
+                                        }
+                                    } else {
+                                        Toast.makeText(applicationContext, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                                     }
-                                } else {
-                                    Toast.makeText(applicationContext, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
 
                     // Theme Detail Bottom Sheet
                     selectedThemeForDetail?.let { theme ->
@@ -212,25 +230,6 @@ class MainActivity : ComponentActivity() {
                                 currentTargetName = name
                             },
                             onDismiss = { isTargetPickerOpen = false }
-                        )
-                    }
-
-                    // KittiSU-style Flash Screen with ASCII banner and terminal log
-                    if (isFlashScreenOpen && activeInstallConfig != null) {
-                        FlashScreen(
-                            config = activeInstallConfig!!,
-                            currentTargetName = activeTargetName,
-                            logs = injectLogs,
-                            status = flashingStatus,
-                            failedReason = flashFailedReason,
-                            onBack = { isFlashScreenOpen = false },
-                            onLaunchMb = {
-                                rootRepository.launchMbBank(
-                                    useDeeplink = activeInstallConfig?.autoLaunchDeeplink == true,
-                                    targetUuid = activeInstallConfig?.targetUuid
-                                )
-                                isFlashScreenOpen = false
-                            }
                         )
                     }
                 }

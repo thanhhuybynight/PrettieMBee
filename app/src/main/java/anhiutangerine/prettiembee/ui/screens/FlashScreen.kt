@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -42,10 +43,15 @@ import androidx.compose.ui.unit.sp
 import anhiutangerine.prettiembee.BuildConfig
 import anhiutangerine.prettiembee.data.model.InjectConfig
 import anhiutangerine.prettiembee.ui.theme.AppThemeMode
+import anhiutangerine.prettiembee.ui.theme.DarkBackground
 import anhiutangerine.prettiembee.ui.theme.ErrorRed
+import anhiutangerine.prettiembee.ui.theme.LightBackground
+import anhiutangerine.prettiembee.ui.theme.OledBackground
 import anhiutangerine.prettiembee.ui.theme.SakuraPink
 import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -119,10 +125,15 @@ fun FlashScreen(
         FlashingStatus.FAILED -> ErrorRed
     }
 
-    // Determine font color: white on dark background, black on light background
+    val isOled = ThemeConfig.themeMode == AppThemeMode.OLED_DARK
     val isDark = when (ThemeConfig.themeMode) {
         AppThemeMode.LIGHT -> false
         AppThemeMode.MATERIAL_DARK, AppThemeMode.OLED_DARK -> true
+    }
+    val baseBackground = when {
+        isOled -> OledBackground
+        isDark -> DarkBackground
+        else -> LightBackground
     }
     val textColor = if (isDark) Color.White else Color.Black
 
@@ -130,156 +141,188 @@ fun FlashScreen(
         logs.joinToString("\n")
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = when (status) {
-                                FlashingStatus.FLASHING -> "Đang cài đặt theme"
-                                FlashingStatus.SUCCESS -> "Cài đặt thành công"
-                                FlashingStatus.FAILED -> "Cài đặt thất bại"
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = statusColor
-                        )
-                        Text(
-                            text = "${config.sourceTheme.name} → $currentTargetName",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (status == FlashingStatus.FLASHING) {
-                                Toast.makeText(context, "Đang nạp theme, vui lòng không thoát...", Toast.LENGTH_SHORT).show()
-                            } else {
-                                onBack()
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
-                            contentDescription = "Quay lại",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            clipboardManager.setText(AnnotatedString(fullLogText))
-                            Toast.makeText(context, "Đã sao chép toàn bộ nhật ký cài đặt!", Toast.LENGTH_SHORT).show()
-
-                            try {
-                                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                                if (downloadsDir.exists() && downloadsDir.canWrite()) {
-                                    val dateStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                                    val file = File(downloadsDir, "PrettieMBee_install_${dateStr}.log")
-                                    file.writeText(fullLogText)
-                                }
-                            } catch (_: Exception) {}
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ContentCopy,
-                            contentDescription = "Sao chép nhật ký",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = ThemeConfig.cardAlpha),
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = ThemeConfig.cardAlpha)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(baseBackground)
+    ) {
+        // Full Screen Wallpaper (KittiSU style)
+        if (ThemeConfig.appBackgroundUri != null) {
+            val file = remember(ThemeConfig.appBackgroundUri) {
+                ThemeConfig.appBackgroundUri?.path?.let { File(it) }?.takeIf { it.exists() }
+            }
+            if (file != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(file)
+                        .allowHardware(false)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
-            )
-        },
-        floatingActionButton = {
-            AnimatedVisibility(
-                visible = status != FlashingStatus.FLASHING,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
-            ) {
-                if (status == FlashingStatus.SUCCESS) {
-                    ExtendedFloatingActionButton(
-                        onClick = onLaunchMb,
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Rounded.RocketLaunch,
-                                contentDescription = "Mở MB Bank"
-                            )
-                        },
-                        text = {
-                            Text(
-                                text = "Mở MB Bank",
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        containerColor = SakuraPink,
-                        contentColor = Color.White,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                } else if (status == FlashingStatus.FAILED) {
-                    ExtendedFloatingActionButton(
-                        onClick = onBack,
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "Đóng"
-                            )
-                        },
-                        text = {
-                            Text(
-                                text = "Đóng",
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        shape = RoundedCornerShape(16.dp)
+                if (ThemeConfig.backgroundDim > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = ThemeConfig.backgroundDim))
                     )
                 }
             }
-        },
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Module progress status bar (KittiSU style)
-            FlashProgressBarCard(
-                themeName = config.sourceTheme.name,
-                status = status,
-                failedReason = failedReason
-            )
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = when (status) {
+                                    FlashingStatus.FLASHING -> "Đang cài đặt theme"
+                                    FlashingStatus.SUCCESS -> "Cài đặt thành công"
+                                    FlashingStatus.FAILED -> "Cài đặt thất bại"
+                                },
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = statusColor
+                            )
+                            Text(
+                                text = "${config.sourceTheme.name} → $currentTargetName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                if (status == FlashingStatus.FLASHING) {
+                                    Toast.makeText(context, "Đang nạp theme, vui lòng không thoát...", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    onBack()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBack,
+                                contentDescription = "Quay lại",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(fullLogText))
+                                Toast.makeText(context, "Đã sao chép toàn bộ nhật ký cài đặt!", Toast.LENGTH_SHORT).show()
 
-            // Log directly on app background (no fake black terminal container)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
-                    .verticalScroll(scrollState)
-                    .horizontalScroll(horizontalScrollState)
-            ) {
-                SelectionContainer {
-                    Text(
-                        text = fullLogText,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 8.8.sp,
-                        lineHeight = 11.5.sp,
-                        color = textColor,
-                        softWrap = false
+                                try {
+                                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                                    if (downloadsDir.exists() && downloadsDir.canWrite()) {
+                                        val dateStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                                        val file = File(downloadsDir, "PrettieMBee_install_${dateStr}.log")
+                                        file.writeText(fullLogText)
+                                    }
+                                } catch (_: Exception) {}
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ContentCopy,
+                                contentDescription = "Sao chép nhật ký",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = ThemeConfig.cardAlpha),
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = ThemeConfig.cardAlpha)
                     )
+                )
+            },
+            floatingActionButton = {
+                AnimatedVisibility(
+                    visible = status != FlashingStatus.FLASHING,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    if (status == FlashingStatus.SUCCESS) {
+                        ExtendedFloatingActionButton(
+                            onClick = onLaunchMb,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.RocketLaunch,
+                                    contentDescription = "Mở MB Bank"
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "Mở MB Bank",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            containerColor = SakuraPink,
+                            contentColor = Color.White,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    } else if (status == FlashingStatus.FAILED) {
+                        ExtendedFloatingActionButton(
+                            onClick = onBack,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "Đóng"
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "Đóng",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+                }
+            },
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                // Module progress status bar (KittiSU style)
+                FlashProgressBarCard(
+                    themeName = config.sourceTheme.name,
+                    status = status,
+                    failedReason = failedReason
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Log directly on app background (no fake black terminal container)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
+                        .verticalScroll(scrollState)
+                        .horizontalScroll(horizontalScrollState)
+                ) {
+                    SelectionContainer {
+                        Text(
+                            text = fullLogText,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 8.8.sp,
+                            lineHeight = 11.5.sp,
+                            color = textColor,
+                            softWrap = false
+                        )
+                    }
                 }
             }
         }
