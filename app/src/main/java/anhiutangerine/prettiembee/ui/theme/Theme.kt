@@ -108,6 +108,7 @@ object ThemeConfig {
     private const val KEY_APPLIED_NEW_THEME = "applied_new_theme"
     private const val KEY_APPLIED_ORIGINAL_THEME = "applied_original_theme"
     private const val KEY_APPLIED_IS_PRIORITY = "applied_is_priority"
+    private const val KEY_APPLIED_THEME_ID = "applied_theme_id"
     private const val KEY_PINNED_THEMES = "pinned_theme_ids"
 
     var themeMode by mutableStateOf(AppThemeMode.LIGHT)
@@ -124,6 +125,7 @@ object ThemeConfig {
     var appliedNewThemeName by mutableStateOf<String?>(null)
     var appliedOriginalThemeName by mutableStateOf<String?>(null)
     var appliedIsPriority by mutableStateOf(false)
+    var appliedThemeId by mutableStateOf<String?>(null)
 
     // Store pin state (community / custom theme ids)
     var pinnedThemeIds by mutableStateOf<Set<String>>(emptySet())
@@ -169,6 +171,7 @@ object ThemeConfig {
         appliedNewThemeName = prefs.getString(KEY_APPLIED_NEW_THEME, null)
         appliedOriginalThemeName = prefs.getString(KEY_APPLIED_ORIGINAL_THEME, null)
         appliedIsPriority = prefs.getBoolean(KEY_APPLIED_IS_PRIORITY, false)
+        appliedThemeId = prefs.getString(KEY_APPLIED_THEME_ID, null)
 
         val pinnedRaw = prefs.getString(KEY_PINNED_THEMES, "") ?: ""
         pinnedThemeIds = pinnedRaw
@@ -284,14 +287,22 @@ object ThemeConfig {
             .apply()
     }
 
-    fun saveAppliedTheme(context: Context, newTheme: String?, originalTheme: String?, isPriority: Boolean) {
+    fun saveAppliedTheme(
+        context: Context,
+        newTheme: String?,
+        originalTheme: String?,
+        isPriority: Boolean,
+        themeId: String? = null
+    ) {
         appliedNewThemeName = newTheme
         appliedOriginalThemeName = originalTheme
         appliedIsPriority = isPriority
+        appliedThemeId = themeId
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putString(KEY_APPLIED_NEW_THEME, newTheme)
             .putString(KEY_APPLIED_ORIGINAL_THEME, originalTheme)
             .putBoolean(KEY_APPLIED_IS_PRIORITY, isPriority)
+            .putString(KEY_APPLIED_THEME_ID, themeId)
             .apply()
     }
 
@@ -299,10 +310,12 @@ object ThemeConfig {
         appliedNewThemeName = null
         appliedOriginalThemeName = null
         appliedIsPriority = false
+        appliedThemeId = null
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .remove(KEY_APPLIED_NEW_THEME)
             .remove(KEY_APPLIED_ORIGINAL_THEME)
             .remove(KEY_APPLIED_IS_PRIORITY)
+            .remove(KEY_APPLIED_THEME_ID)
             .apply()
     }
 

@@ -581,6 +581,7 @@ fun HomeScreen(
                                     appliedNewTheme = ThemeConfig.appliedNewThemeName,
                                     appliedOriginalTheme = ThemeConfig.appliedOriginalThemeName,
                                     appliedIsPriority = ThemeConfig.appliedIsPriority,
+                                    appliedThemeId = ThemeConfig.appliedThemeId,
                                     backgroundUri = ThemeConfig.statusCardBackgroundUri,
                                     cardAlpha = ThemeConfig.cardAlpha
                                 )

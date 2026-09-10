@@ -220,7 +220,8 @@ class MainActivity : ComponentActivity() {
                                             context = applicationContext,
                                             newTheme = config.sourceTheme.name,
                                             originalTheme = currentTargetName,
-                                            isPriority = config.usePriorityVariant
+                                            isPriority = config.usePriorityVariant,
+                                            themeId = config.sourceTheme.id
                                         )
                                         flashingStatus = FlashingStatus.SUCCESS
                                         // Auto-launch MB Bank after successful install
