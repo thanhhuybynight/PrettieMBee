@@ -124,6 +124,8 @@ fun HomeScreen(
     onRefreshStatus: () -> Unit,
     onChangePackage: (String) -> Unit,
     onSelectTheme: (CommunityTheme) -> Unit,
+    onTogglePin: (CommunityTheme) -> Unit,
+    onDeleteDownloaded: (CommunityTheme) -> Unit,
     onImportZip: (Uri, String) -> Unit,
     onResetThemes: (suspend () -> Result<Unit>)? = null,
     modifier: Modifier = Modifier
@@ -733,15 +735,19 @@ fun HomeScreen(
                                 }
                             }
 
-                            // Filter Themes
-                            val filteredThemes = communityThemes.filter { theme ->
-                                val matchCategory = selectedCategory == "Tất cả" || theme.series == selectedCategory
-                                val matchQuery = searchQuery.isBlank() ||
-                                        theme.name.contains(searchQuery, ignoreCase = true) ||
-                                        theme.author.contains(searchQuery, ignoreCase = true) ||
-                                        theme.series.contains(searchQuery, ignoreCase = true)
-                            matchCategory && matchQuery
-                            }
+                            // Filter Themes, then float pinned to top
+                            val filteredThemes = communityThemes
+                                .filter { theme ->
+                                    val matchCategory = selectedCategory == "Tất cả" || theme.series == selectedCategory
+                                    val matchQuery = searchQuery.isBlank() ||
+                                            theme.name.contains(searchQuery, ignoreCase = true) ||
+                                            theme.author.contains(searchQuery, ignoreCase = true) ||
+                                            theme.series.contains(searchQuery, ignoreCase = true)
+                                    matchCategory && matchQuery
+                                }
+                                .sortedByDescending { theme ->
+                                    if (ThemeConfig.isPinnedTheme(theme.id)) 1 else 0
+                                }
 
                             // Section Header
                             item {
@@ -787,7 +793,10 @@ fun HomeScreen(
                                 ThemeCard(
                                     theme = theme,
                                     isDownloaded = isThemeDownloaded(theme),
-                                    onClick = { onSelectTheme(theme) }
+                                    isPinned = ThemeConfig.isPinnedTheme(theme.id),
+                                    onClick = { onSelectTheme(theme) },
+                                    onTogglePin = { onTogglePin(theme) },
+                                    onDeleteDownloaded = { onDeleteDownloaded(theme) }
                                 )
                             }
                         }

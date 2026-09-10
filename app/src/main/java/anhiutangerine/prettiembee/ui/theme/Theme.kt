@@ -108,6 +108,7 @@ object ThemeConfig {
     private const val KEY_APPLIED_NEW_THEME = "applied_new_theme"
     private const val KEY_APPLIED_ORIGINAL_THEME = "applied_original_theme"
     private const val KEY_APPLIED_IS_PRIORITY = "applied_is_priority"
+    private const val KEY_PINNED_THEMES = "pinned_theme_ids"
 
     var themeMode by mutableStateOf(AppThemeMode.LIGHT)
     var themeAccent by mutableStateOf(AppThemeAccent.SAKURA)
@@ -123,6 +124,9 @@ object ThemeConfig {
     var appliedNewThemeName by mutableStateOf<String?>(null)
     var appliedOriginalThemeName by mutableStateOf<String?>(null)
     var appliedIsPriority by mutableStateOf(false)
+
+    // Store pin state (community / custom theme ids)
+    var pinnedThemeIds by mutableStateOf<Set<String>>(emptySet())
 
     fun load(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -165,6 +169,26 @@ object ThemeConfig {
         appliedNewThemeName = prefs.getString(KEY_APPLIED_NEW_THEME, null)
         appliedOriginalThemeName = prefs.getString(KEY_APPLIED_ORIGINAL_THEME, null)
         appliedIsPriority = prefs.getBoolean(KEY_APPLIED_IS_PRIORITY, false)
+
+        val pinnedRaw = prefs.getString(KEY_PINNED_THEMES, "") ?: ""
+        pinnedThemeIds = pinnedRaw
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+    }
+
+    fun isPinnedTheme(themeId: String): Boolean = themeId in pinnedThemeIds
+
+    fun togglePinnedTheme(context: Context, themeId: String) {
+        pinnedThemeIds = if (themeId in pinnedThemeIds) {
+            pinnedThemeIds - themeId
+        } else {
+            pinnedThemeIds + themeId
+        }
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putString(KEY_PINNED_THEMES, pinnedThemeIds.joinToString(","))
+            .apply()
     }
 
     fun saveThemeMode(context: Context, mode: AppThemeMode) {

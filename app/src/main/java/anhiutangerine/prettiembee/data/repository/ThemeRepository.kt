@@ -39,6 +39,27 @@ class ThemeRepository(private val context: Context) {
         return hasValidThemeLayout(getThemeDir(theme.id))
     }
 
+    fun deleteDownloadedTheme(theme: CommunityTheme): Result<Unit> {
+        return try {
+            val dir = getThemeDir(theme.id)
+            if (dir.exists()) {
+                dir.deleteRecursively()
+            }
+            if (theme.isCustomImport) {
+                removeFromCustomThemes(theme.id)
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun removeFromCustomThemes(themeId: String) {
+        if (!customThemesFile.exists()) return
+        val current = loadCustomThemes().filterNot { it.id == themeId }
+        customThemesFile.writeText(json.encodeToString(current))
+    }
+
     private fun hasValidThemeLayout(themeDir: File): Boolean {
         val tokenFile = File(File(themeDir, "theme"), "token.json")
         val imagesDir = File(themeDir, "images")

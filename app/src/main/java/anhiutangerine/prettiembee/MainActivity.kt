@@ -49,6 +49,7 @@ class MainActivity : ComponentActivity() {
                 var targetPackage by remember { mutableStateOf(rootRepository.targetPackage) }
                 var installedThemes by remember { mutableStateOf<List<InstalledTheme>>(emptyList()) }
                 var communityThemes by remember { mutableStateOf<List<CommunityTheme>>(emptyList()) }
+                var downloadedThemeIds by remember { mutableStateOf<Set<String>>(emptySet()) }
                 var storeThemes by remember { mutableStateOf<List<MbStoreTheme>>(emptyList()) }
 
                 var selectedThemeForDetail by remember { mutableStateOf<CommunityTheme?>(null) }
@@ -74,6 +75,10 @@ class MainActivity : ComponentActivity() {
                         val loadedStore = themeRepository.getStoreThemes()
                         storeThemes = loadedStore
                         communityThemes = themeRepository.getCommunityThemes()
+                        downloadedThemeIds = communityThemes
+                            .filter { themeRepository.isThemeDownloaded(it) }
+                            .map { it.id }
+                            .toSet()
 
                         if (isRootGranted) {
                             installedThemes = rootRepository.getInstalledThemes(loadedStore)
@@ -108,7 +113,7 @@ class MainActivity : ComponentActivity() {
                             installedThemeCount = installedThemes.size,
                             installedThemes = installedThemes,
                             communityThemes = communityThemes,
-                            isThemeDownloaded = { theme -> themeRepository.isThemeDownloaded(theme) },
+                            isThemeDownloaded = { theme -> theme.id in downloadedThemeIds },
                             onRefreshStatus = {
                                 Toast.makeText(applicationContext, "Đang làm mới dữ liệu và đồng bộ kho theme...", Toast.LENGTH_SHORT).show()
                                 refreshAll()
@@ -124,6 +129,16 @@ class MainActivity : ComponentActivity() {
                                     currentTargetName = match.displayName
                                 }
                             },
+                            onTogglePin = { theme ->
+                                ThemeConfig.togglePinnedTheme(applicationContext, theme.id)
+                            },
+                            onDeleteDownloaded = { theme ->
+                                themeRepository.deleteDownloadedTheme(theme)
+                                downloadedThemeIds = downloadedThemeIds - theme.id
+                                if (theme.isCustomImport) {
+                                    communityThemes = themeRepository.getCommunityThemes()
+                                }
+                            },
                             onImportZip = { uri, fileName ->
                                 coroutineScope.launch {
                                     Toast.makeText(applicationContext, "Đang xử lý file ZIP...", Toast.LENGTH_SHORT).show()
@@ -131,6 +146,10 @@ class MainActivity : ComponentActivity() {
                                     if (res.isSuccess) {
                                         Toast.makeText(applicationContext, "Nạp theme thành công!", Toast.LENGTH_SHORT).show()
                                         communityThemes = themeRepository.getCommunityThemes()
+                                        downloadedThemeIds = communityThemes
+                                            .filter { themeRepository.isThemeDownloaded(it) }
+                                            .map { it.id }
+                                            .toSet()
                                         res.getOrNull()?.let { imported ->
                                             selectedThemeForDetail = imported
                                         }
