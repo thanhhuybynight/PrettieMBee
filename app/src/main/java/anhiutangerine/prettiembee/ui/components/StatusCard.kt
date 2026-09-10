@@ -10,6 +10,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import java.io.File
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,27 +45,33 @@ fun StatusCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            // Status Card Custom Background (KittiSU style)
+            // Status Card Custom Background
             if (backgroundUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(backgroundUri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(RoundedCornerShape(24.dp)),
-                    alpha = 0.85f
-                )
-                // Subtle darkening overlay so text remains readable
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.Black.copy(alpha = 0.25f))
-                )
+                val file = remember(backgroundUri) {
+                    backgroundUri.path?.let { File(it) }?.takeIf { it.exists() }
+                }
+                if (file != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(file)
+                            .allowHardware(false)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(RoundedCornerShape(24.dp)),
+                        alpha = 0.85f
+                    )
+                    // Subtle darkening overlay so text remains readable
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.Black.copy(alpha = 0.25f))
+                    )
+                }
             }
 
             Column(

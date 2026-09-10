@@ -2,6 +2,7 @@ package anhiutangerine.prettiembee.ui.screens
 
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -131,12 +132,13 @@ fun HomeScreen(
     var tempPackageInput by remember { mutableStateOf(targetPackage) }
     var tempDpiInput by remember { mutableIntStateOf(ThemeConfig.appDpi) }
 
-    // Image Pickers for Status Card & App Background (KittiSU style)
+    // Image Pickers for Status Card & App Background
     val statusCardBgPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
             ThemeConfig.saveStatusCardBackground(context, uri)
+            Toast.makeText(context, "Đã cập nhật ảnh nền Status Card", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -145,6 +147,7 @@ fun HomeScreen(
     ) { uri: Uri? ->
         if (uri != null) {
             ThemeConfig.saveAppBackground(context, uri)
+            Toast.makeText(context, "Đã áp dụng hình nền toàn ứng dụng", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -308,7 +311,7 @@ fun HomeScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Điều chỉnh tỷ lệ giao diện riêng cho PrettieMBee (KittiSU style):",
+                        text = "Điều chỉnh tỷ lệ giao diện riêng cho PrettieMBee:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -778,7 +781,7 @@ fun HomeScreen(
                             // Appearance & Customization (KittiSU style)
                             item {
                                 SegmentedGroup(
-                                    title = "Giao diện & Chủ đề (KittiSU Style)"
+                                    title = "Giao diện & Chủ đề"
                                 ) {
                                     // 1. Chế độ nền
                                     SegmentedItem(
@@ -786,8 +789,8 @@ fun HomeScreen(
                                         subtitle = ThemeConfig.themeMode.title,
                                         icon = when (ThemeConfig.themeMode) {
                                             AppThemeMode.LIGHT -> Icons.Rounded.LightMode
-                                            AppThemeMode.DARK -> Icons.Rounded.DarkMode
-                                            AppThemeMode.SYSTEM -> Icons.Rounded.Contrast
+                                            AppThemeMode.MATERIAL_DARK -> Icons.Rounded.DarkMode
+                                            AppThemeMode.OLED_DARK -> Icons.Rounded.Contrast
                                         },
                                         iconTint = MaterialTheme.colorScheme.primary,
                                         onClick = { showThemeModeDialog = true },
@@ -882,7 +885,10 @@ fun HomeScreen(
                                                 }
                                                 if (ThemeConfig.statusCardBackgroundUri != null) {
                                                     IconButton(
-                                                        onClick = { ThemeConfig.saveStatusCardBackground(context, null) }
+                                                        onClick = {
+                                                            ThemeConfig.saveStatusCardBackground(context, null)
+                                                            Toast.makeText(context, "Đã xoá nền thẻ", Toast.LENGTH_SHORT).show()
+                                                        }
                                                     ) {
                                                         Icon(
                                                             imageVector = Icons.Rounded.Delete,
@@ -921,7 +927,10 @@ fun HomeScreen(
                                                 }
                                                 if (ThemeConfig.appBackgroundUri != null) {
                                                     IconButton(
-                                                        onClick = { ThemeConfig.saveAppBackground(context, null) }
+                                                        onClick = {
+                                                            ThemeConfig.saveAppBackground(context, null)
+                                                            Toast.makeText(context, "Đã xoá hình nền ứng dụng", Toast.LENGTH_SHORT).show()
+                                                        }
                                                     ) {
                                                         Icon(
                                                             imageVector = Icons.Rounded.Delete,
@@ -987,7 +996,8 @@ fun HomeScreen(
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Slider(
                                                 value = ThemeConfig.backgroundDim,
-                                                onValueChange = { ThemeConfig.saveBackgroundDim(context, it) },
+                                                onValueChange = { ThemeConfig.backgroundDim = it.coerceIn(0f, 0.9f) },
+                                                onValueChangeFinished = { ThemeConfig.saveBackgroundDim(context, ThemeConfig.backgroundDim) },
                                                 valueRange = 0f..0.9f
                                             )
                                         }
@@ -1048,7 +1058,8 @@ fun HomeScreen(
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Slider(
                                             value = ThemeConfig.cardAlpha,
-                                            onValueChange = { ThemeConfig.saveCardAlpha(context, it) },
+                                            onValueChange = { ThemeConfig.cardAlpha = it.coerceIn(0.1f, 1f) },
+                                            onValueChangeFinished = { ThemeConfig.saveCardAlpha(context, ThemeConfig.cardAlpha) },
                                             valueRange = 0.1f..1f
                                         )
                                     }

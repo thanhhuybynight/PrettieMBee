@@ -37,8 +37,8 @@ import java.io.FileOutputStream
 
 enum class AppThemeMode(val title: String) {
     LIGHT("Trắng Material"),
-    DARK("Giao diện tối"),
-    SYSTEM("Theo hệ thống")
+    MATERIAL_DARK("Đen Material"),
+    OLED_DARK("Đen OLED")
 }
 
 enum class AppThemeAccent(
@@ -131,7 +131,11 @@ object ThemeConfig {
         themeMode = try {
             AppThemeMode.valueOf(modeStr ?: AppThemeMode.LIGHT.name)
         } catch (_: Exception) {
-            AppThemeMode.LIGHT
+            when (modeStr) {
+                "DARK" -> AppThemeMode.MATERIAL_DARK
+                "SYSTEM" -> AppThemeMode.LIGHT
+                else -> AppThemeMode.LIGHT
+            }
         }
         themeAccent = try {
             AppThemeAccent.valueOf(accentStr ?: AppThemeAccent.SAKURA.name)
@@ -179,9 +183,11 @@ object ThemeConfig {
 
     fun saveStatusCardBackground(context: Context, uri: Uri?) {
         val finalUri = if (uri != null) {
-            copyImageToInternalStorage(context, uri, "status_card_bg.jpg")
+            context.filesDir.listFiles()?.filter { it.name.startsWith("status_card_bg") }?.forEach { it.delete() }
+            val fileName = "status_card_bg_${System.currentTimeMillis()}.jpg"
+            copyImageToInternalStorage(context, uri, fileName)
         } else {
-            File(context.filesDir, "status_card_bg.jpg").delete()
+            context.filesDir.listFiles()?.filter { it.name.startsWith("status_card_bg") }?.forEach { it.delete() }
             null
         }
         statusCardBackgroundUri = finalUri
@@ -192,7 +198,9 @@ object ThemeConfig {
 
     fun saveAppBackground(context: Context, uri: Uri?) {
         val finalUri = if (uri != null) {
-            val copied = copyImageToInternalStorage(context, uri, "app_bg.jpg")
+            context.filesDir.listFiles()?.filter { it.name.startsWith("app_bg") }?.forEach { it.delete() }
+            val fileName = "app_bg_${System.currentTimeMillis()}.jpg"
+            val copied = copyImageToInternalStorage(context, uri, fileName)
             if (backgroundDim == 0f) backgroundDim = 0.25f
             if (cardAlpha == 1f) cardAlpha = 0.75f
             copied?.let {
@@ -201,7 +209,7 @@ object ThemeConfig {
             }
             copied
         } else {
-            File(context.filesDir, "app_bg.jpg").delete()
+            context.filesDir.listFiles()?.filter { it.name.startsWith("app_bg") }?.forEach { it.delete() }
             backgroundDim = 0f
             cardAlpha = 1f
             extractedSeedColor = null
@@ -276,7 +284,11 @@ object ThemeConfig {
 
     private fun copyImageToInternalStorage(context: Context, uri: Uri, fileName: String): Uri? {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val inputStream = if (uri.scheme == "file") {
+                File(uri.path ?: "").inputStream()
+            } else {
+                context.contentResolver.openInputStream(uri)
+            } ?: return null
             val file = File(context.filesDir, fileName)
             FileOutputStream(file).use { outputStream ->
                 val buffer = ByteArray(8 * 1024)
@@ -295,7 +307,11 @@ object ThemeConfig {
 
     fun extractDominantColor(context: Context, uri: Uri): Color {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return SakuraPink
+            val inputStream = if (uri.scheme == "file") {
+                File(uri.path ?: "").inputStream()
+            } else {
+                context.contentResolver.openInputStream(uri)
+            } ?: return SakuraPink
             val options = BitmapFactory.Options().apply {
                 inSampleSize = 4
             }
@@ -364,8 +380,15 @@ fun PrettieMBeeTheme(
 ) {
     val isDark = when (ThemeConfig.themeMode) {
         AppThemeMode.LIGHT -> false
-        AppThemeMode.DARK -> true
-        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+        AppThemeMode.MATERIAL_DARK -> true
+        AppThemeMode.OLED_DARK -> true
+    }
+    val isOled = ThemeConfig.themeMode == AppThemeMode.OLED_DARK
+
+    val baseBackground = when {
+        isOled -> OledBackground
+        isDark -> DarkBackground
+        else -> LightBackground
     }
 
     val customAccent = remember(ThemeConfig.useBackgroundSeedColor, ThemeConfig.extractedSeedColor, ThemeConfig.themeAccent) {
@@ -381,8 +404,32 @@ fun PrettieMBeeTheme(
         }
     }
 
-    val colorScheme = if (isDark) {
-        darkColorScheme(
+    val colorScheme = when {
+        isOled -> darkColorScheme(
+            primary = customAccent.darkPrimary,
+            onPrimary = Color(0xFF1E060D),
+            primaryContainer = customAccent.darkPrimary.copy(alpha = 0.22f),
+            onPrimaryContainer = Color.White,
+            secondary = customAccent.secondary,
+            onSecondary = Color(0xFF1E060D),
+            secondaryContainer = OledSurfaceContainerHigh,
+            onSecondaryContainer = OledOnSurface,
+            tertiary = customAccent.previewColor,
+            background = if (ThemeConfig.appBackgroundUri != null) Color.Transparent else OledBackground,
+            surface = OledSurface,
+            surfaceVariant = OledSurfaceVariant,
+            surfaceContainerLowest = OledSurfaceContainerLowest,
+            surfaceContainerLow = OledSurfaceContainerLow,
+            surfaceContainer = OledSurfaceContainer,
+            surfaceContainerHigh = OledSurfaceContainerHigh,
+            surfaceContainerHighest = OledSurfaceContainerHighest,
+            outline = OledOutline,
+            outlineVariant = OledOutlineVariant,
+            onBackground = OledOnSurface,
+            onSurface = OledOnSurface,
+            onSurfaceVariant = OledOnSurfaceVariant
+        )
+        isDark -> darkColorScheme(
             primary = customAccent.darkPrimary,
             onPrimary = Color(0xFF1E060D),
             primaryContainer = customAccent.darkPrimary.copy(alpha = 0.22f),
@@ -406,8 +453,7 @@ fun PrettieMBeeTheme(
             onSurface = DarkOnSurface,
             onSurfaceVariant = DarkOnSurfaceVariant
         )
-    } else {
-        lightColorScheme(
+        else -> lightColorScheme(
             primary = customAccent.lightPrimary,
             onPrimary = Color.White,
             primaryContainer = customAccent.previewColor.copy(alpha = 0.25f),
@@ -462,27 +508,31 @@ fun PrettieMBeeTheme(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        if (isDark) DarkBackground else LightBackground
-                    )
+                    .background(baseBackground)
             ) {
-                // Full Screen Background (KittiSU style)
+                // Full Screen Background (App Wallpaper)
                 if (ThemeConfig.appBackgroundUri != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(ThemeConfig.appBackgroundUri)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    if (ThemeConfig.backgroundDim > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = ThemeConfig.backgroundDim))
+                    val file = remember(ThemeConfig.appBackgroundUri) {
+                        ThemeConfig.appBackgroundUri?.path?.let { File(it) }?.takeIf { it.exists() }
+                    }
+                    if (file != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(file)
+                                .allowHardware(false)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
                         )
+                        if (ThemeConfig.backgroundDim > 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = ThemeConfig.backgroundDim))
+                            )
+                        }
                     }
                 }
                 content()
