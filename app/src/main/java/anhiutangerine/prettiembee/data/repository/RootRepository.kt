@@ -59,9 +59,6 @@ class RootRepository(private val context: Context) {
         defaultPath
     }
 
-    val mbThemeBase: String
-        get() = "${cachedDataDir ?: "/data/data/$targetPackage"}/app_flutter/app_theme/unzip"
-
     suspend fun getMbThemeBase(): String {
         return "${resolveDataDir()}/app_flutter/app_theme/unzip"
     }
@@ -266,32 +263,6 @@ class RootRepository(private val context: Context) {
             }
         }
         Result.failure(lastError ?: Exception("Không thể ghi file qua su"))
-    }
-
-    suspend fun backupTheme(targetUuid: String): Boolean = withContext(Dispatchers.IO) {
-        val themeBase = getMbThemeBase()
-        val backupDir = File(context.filesDir, "backups/$targetUuid")
-        backupDir.mkdirs()
-        val resolvedBackupDir = resolveAppPath(backupDir)
-        val res = Shell.cmd(
-            "mkdir -p '$resolvedBackupDir'",
-            "cp -rf '$themeBase/$targetUuid/.' '$resolvedBackupDir/'"
-        ).exec()
-        res.isSuccess
-    }
-
-    suspend fun restoreTheme(targetUuid: String): Boolean = withContext(Dispatchers.IO) {
-        val themeBase = getMbThemeBase()
-        val backupDir = File(context.filesDir, "backups/$targetUuid")
-        if (!backupDir.exists()) return@withContext false
-        val resolvedBackupDir = resolveAppPath(backupDir)
-
-        val res = Shell.cmd(
-            "am force-stop $targetPackage",
-            "cp -rf '$resolvedBackupDir/.' '$themeBase/$targetUuid/'",
-            "restorecon -R '$themeBase/$targetUuid'"
-        ).exec()
-        res.isSuccess
     }
 
     suspend fun injectTheme(
