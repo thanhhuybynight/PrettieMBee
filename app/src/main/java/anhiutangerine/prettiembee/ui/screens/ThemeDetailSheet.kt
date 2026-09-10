@@ -37,7 +37,6 @@ fun ThemeDetailSheet(
     onDismiss: () -> Unit
 ) {
     var usePriority by remember { mutableStateOf(false) }
-    var autoLaunchMb by remember { mutableStateOf(true) }
     var autoDeeplink by remember { mutableStateOf(true) }
 
     ModalBottomSheet(
@@ -247,7 +246,6 @@ fun ThemeDetailSheet(
                             sourceTheme = theme,
                             targetUuid = currentTargetUuid,
                             usePriorityVariant = usePriority,
-                            autoLaunchMb = autoLaunchMb,
                             autoLaunchDeeplink = autoDeeplink
                         )
                     )
