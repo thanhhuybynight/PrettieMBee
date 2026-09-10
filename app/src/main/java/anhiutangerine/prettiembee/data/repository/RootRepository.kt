@@ -356,14 +356,12 @@ class RootRepository(private val context: Context) {
             val themeBase = "$dataDir/app_flutter/app_theme/unzip"
             val targetDir = "$themeBase/${config.targetUuid}"
             log("[Tiến trình] Chuẩn bị thư mục đích: $targetDir")
-            val prepScript = """
-                exec 2>&1
-                mkdir -p '$targetDir'
-                rm -rf '$targetDir/images' '$targetDir/theme'
-                mkdir -p '$targetDir/images'
-                mkdir -p '$targetDir/theme'
-            """.trimIndent()
-            val prepCmd = Shell.cmd(prepScript).exec()
+            val prepCmd = Shell.cmd(
+                "mkdir -p '$targetDir'",
+                "rm -rf '$targetDir/images' '$targetDir/theme'",
+                "mkdir -p '$targetDir/images'",
+                "mkdir -p '$targetDir/theme'"
+            ).exec()
             val prepOutput = (prepCmd.out + prepCmd.err).filter { it.isNotBlank() }.joinToString("\n")
             if (prepOutput.isNotBlank()) {
                 log("[Shell Prep] $prepOutput")
@@ -388,7 +386,6 @@ class RootRepository(private val context: Context) {
 
             var copySucceeded = false
             val copyScript = """
-                exec 2>&1
                 mkdir -p '$targetDir/images'
                 mkdir -p '$targetDir/theme'
                 if ! cp -rf '$resolvedImages/.' '$targetDir/images/'; then
@@ -529,25 +526,39 @@ class RootRepository(private val context: Context) {
 
             // 2. Resolve dataDir and paths
             val dataDir = resolveDataDir()
-            val themeBase = "$dataDir/app_flutter/app_theme"
+            val flutterDir = "$dataDir/app_flutter"
+            val themeBase = "$flutterDir/app_theme"
+            val unzipDir = "$themeBase/unzip"
             val uidGid = resolveUidGid(dataDir)
 
             // 3. Clear all custom themes and prepare clean structure
-            val chownCmd = if (!uidGid.isNullOrBlank()) "chown -R $uidGid '$themeBase' 2>/dev/null || true" else ""
-            val resetScript = """
-                exec 2>&1
-                rm -rf '$themeBase'
-                mkdir -p '$themeBase/unzip'
-                $chownCmd
-                chmod 755 '$dataDir/app_flutter' 2>/dev/null || true
-                chmod 755 '$themeBase' 2>/dev/null || true
-                chmod 755 '$themeBase/unzip' 2>/dev/null || true
-            """.trimIndent()
+            val cmds = mutableListOf<String>()
+            cmds.add("am force-stop $targetPackage")
+            cmds.add("rm -rf '$themeBase'")
+            cmds.add("rm -rf '/data/data/$targetPackage/app_flutter/app_theme' 2>/dev/null || true")
+            cmds.add("rm -rf '/data/user/0/$targetPackage/app_flutter/app_theme' 2>/dev/null || true")
+            cmds.add("mkdir -p '$unzipDir'")
+            if (!uidGid.isNullOrBlank()) {
+                cmds.add("chown -R $uidGid '$flutterDir' 2>/dev/null || true")
+                cmds.add("chown -R $uidGid '$themeBase' 2>/dev/null || true")
+            }
+            cmds.add("chmod 755 '$dataDir' 2>/dev/null || true")
+            cmds.add("chmod 755 '$flutterDir' 2>/dev/null || true")
+            cmds.add("chmod 755 '$themeBase' 2>/dev/null || true")
+            cmds.add("chmod 755 '$unzipDir' 2>/dev/null || true")
+            cmds.add("restorecon -R '$themeBase' 2>/dev/null || true")
 
-            val res = Shell.cmd(resetScript).exec()
-            if (!res.isSuccess) {
-                val err = (res.out + res.err).filter { it.isNotBlank() }.joinToString("\n")
-                return@withContext Result.failure(Exception("Không thể dọn dẹp thư mục theme: $err"))
+            val res = Shell.cmd(*cmds.toTypedArray()).exec()
+
+            // 4. Verify target directory exists and is a directory
+            val checkRes = Shell.cmd("test -d '$unzipDir' && echo 1 || echo 0").exec()
+            val targetExists = checkRes.out.firstOrNull()?.trim() == "1"
+
+            if (!targetExists) {
+                val errDetails = (res.out + res.err).filter { it.isNotBlank() }.joinToString("\n")
+                return@withContext Result.failure(
+                    Exception("Không thể khởi tạo thư mục rỗng cho theme (mã lỗi ${res.code}): ${errDetails.ifBlank { "Lệnh mkdir không thể tạo $unzipDir" }}")
+                )
             }
 
             Result.success(Unit)
