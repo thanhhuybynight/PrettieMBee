@@ -1,6 +1,7 @@
 package anhiutangerine.prettiembee.ui.screens
 
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -17,19 +18,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.*
@@ -37,12 +40,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import anhiutangerine.prettiembee.BuildConfig
 import anhiutangerine.prettiembee.R
 import anhiutangerine.prettiembee.data.model.CommunityTheme
 import anhiutangerine.prettiembee.data.model.InstalledTheme
@@ -53,9 +62,41 @@ import anhiutangerine.prettiembee.ui.components.StatusCard
 import anhiutangerine.prettiembee.ui.components.ThemeCard
 import anhiutangerine.prettiembee.ui.theme.AppThemeAccent
 import anhiutangerine.prettiembee.ui.theme.AppThemeMode
-import anhiutangerine.prettiembee.ui.theme.SakuraAccent
-import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
+import kotlin.math.abs
+
+@Composable
+fun rememberScrollConnection(
+    isScrollingDown: MutableState<Boolean>,
+    scrollOffset: MutableState<Float>,
+    previousScrollOffset: MutableState<Float>,
+    threshold: Float = 35f
+): NestedScrollConnection {
+    return remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                val newOffset = scrollOffset.value + delta
+                scrollOffset.value = newOffset
+                val scrollDelta = previousScrollOffset.value - newOffset
+
+                if (abs(scrollDelta) > threshold) {
+                    isScrollingDown.value = scrollDelta > 0
+                    previousScrollOffset.value = newOffset
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPostFling(
+                consumed: Velocity,
+                available: Velocity
+            ): Velocity {
+                previousScrollOffset.value = scrollOffset.value
+                return super.onPostFling(consumed, available)
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +121,16 @@ fun HomeScreen(
     var showPackageDialog by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
     var tempPackageInput by remember { mutableStateOf(targetPackage) }
+
+    // Scroll connection for floating navbar auto hide/show (KittiSU style)
+    val isScrollingDown = remember { mutableStateOf(false) }
+    val scrollOffset = remember { mutableFloatStateOf(0f) }
+    val previousScrollOffset = remember { mutableFloatStateOf(0f) }
+    val bottomBarScrollConnection = rememberScrollConnection(
+        isScrollingDown = isScrollingDown,
+        scrollOffset = scrollOffset,
+        previousScrollOffset = previousScrollOffset
+    )
 
     LaunchedEffect(targetPackage) {
         tempPackageInput = targetPackage
@@ -247,11 +298,7 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = when (selectedTab) {
-                                    0 -> "Trang chủ"
-                                    1 -> "Kho theme cộng đồng"
-                                    else -> "Cài đặt & tuỳ chọn"
-                                },
+                                text = "v${BuildConfig.VERSION_NAME} - ${BuildConfig.GIT_HASH}",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 11.sp
                                 ),
@@ -302,375 +349,394 @@ fun HomeScreen(
                 )
             )
         },
-        bottomBar = {
-            FloatingBottomBar(
-                selectedIndex = selectedTab,
-                onItemSelected = { selectedTab = it }
-            )
-        },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
     ) { innerPadding ->
-        AnimatedContent(
-            targetState = selectedTab,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "tab_content_transition"
-        ) { tab ->
-            when (tab) {
-                0 -> {
-                    // TAB 0: TRANG CHỦ (Home)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
-                    ) {
-                        // Hero Status Card (KittiSU aesthetic, clean states, no AI slop dots)
-                        item {
-                            StatusCard(
-                                isRootGranted = isRootGranted,
-                                isMbInstalled = isMbInstalled,
-                                targetPackage = targetPackage,
-                                installedThemeCount = installedThemeCount,
-                                onRefresh = onRefreshStatus,
-                                onEditPackage = { showPackageDialog = true }
-                            )
-                        }
-
-                        // Configuration Group (Cấu hình MB Bank)
-                        item {
-                            SegmentedGroup(
-                                title = "Cấu hình MB Bank"
-                            ) {
-                                SegmentedItem(
-                                    title = "Package mục tiêu",
-                                    subtitle = targetPackage,
-                                    icon = Icons.Rounded.Smartphone,
-                                    iconTint = MaterialTheme.colorScheme.primary,
-                                    onClick = { showPackageDialog = true },
-                                    trailingContent = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Edit,
-                                            contentDescription = "Edit",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    },
-                                    showDivider = true
-                                )
-
-                                SegmentedItem(
-                                    title = "Trạng thái ứng dụng MB",
-                                    subtitle = if (isMbInstalled) "Đã cài đặt trên thiết bị" else "Chưa phát hiện gói cài đặt",
-                                    icon = Icons.Rounded.CheckCircle,
-                                    iconTint = if (isMbInstalled) SuccessGreen else SakuraAccent,
-                                    showDivider = true
-                                )
-
-                                SegmentedItem(
-                                    title = "Quyền SuperUser (Root)",
-                                    subtitle = if (isRootGranted) "Đã cấp quyền root thành công" else "Chưa cấp quyền root",
-                                    icon = Icons.Rounded.Security,
-                                    iconTint = if (isRootGranted) SuccessGreen else SakuraAccent,
-                                    showDivider = false
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .nestedScroll(bottomBarScrollConnection)
+        ) {
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "tab_content_transition"
+            ) { tab ->
+                when (tab) {
+                    0 -> {
+                        // TAB 0: TRANG CHỦ (Home)
+                        // Giao diện chỉ có status card và thông tin hệ thống
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp)
+                        ) {
+                            item {
+                                StatusCard(
+                                    isRootGranted = isRootGranted,
+                                    isMbInstalled = isMbInstalled
                                 )
                             }
-                        }
 
-                        // Installed Themes in Target Package Group
-                        item {
-                            SegmentedGroup(
-                                title = "Theme đã phát hiện ($targetPackage)"
-                            ) {
-                                if (installedThemes.isEmpty()) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(20.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "Chưa phát hiện theme nào trong bộ nhớ app MB.\nHãy mở MB Bank > Tiện ích > Giao diện để tải ít nhất 1 theme!",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                        )
-                                    }
-                                } else {
-                                    installedThemes.forEachIndexed { index, installed ->
-                                        val displayName = installed.storeTheme?.displayName ?: "Theme (${installed.uuid.take(8)}...)"
-                                        SegmentedItem(
-                                            title = displayName,
-                                            subtitle = "UUID: ${installed.uuid} (${installed.imageCount} files)",
-                                            icon = Icons.Rounded.Palette,
-                                            iconTint = MaterialTheme.colorScheme.primary,
-                                            showDivider = index < installedThemes.lastIndex
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                1 -> {
-                    // TAB 1: KHO THEME (Themes)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
-                    ) {
-                        // Search Bar
-                        item {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = {
-                                    Text(
-                                        text = "Tìm theme theo tên hoặc tác giả...",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Search,
-                                        contentDescription = "Search",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                },
-                                trailingIcon = {
-                                    if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { searchQuery = "" }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription = "Clear",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                            item {
+                                SegmentedGroup(
+                                    title = "Thông tin hệ thống"
+                                ) {
+                                    val mbVersion = remember(isMbInstalled, targetPackage) {
+                                        if (!isMbInstalled) {
+                                            "Chưa cài đặt"
+                                        } else {
+                                            try {
+                                                val pInfo = context.packageManager.getPackageInfo(targetPackage, 0)
+                                                pInfo.versionName ?: "Đã cài đặt"
+                                            } catch (e: Exception) {
+                                                "Đã cài đặt"
+                                            }
                                         }
                                     }
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(18.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                                )
-                            )
-                        }
 
-                        // Category Filter Row
-                        item {
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(vertical = 2.dp)
-                            ) {
-                                items(categories) { category ->
-                                    val isSelected = category == selectedCategory
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = { selectedCategory = category },
-                                        label = {
-                                            Text(
-                                                text = category,
-                                                style = MaterialTheme.typography.labelMedium.copy(
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    fontSize = 12.sp
-                                                )
-                                            )
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                                            selectedLabelColor = MaterialTheme.colorScheme.primary,
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                        ),
-                                        border = FilterChipDefaults.filterChipBorder(
-                                            enabled = true,
-                                            selected = isSelected,
-                                            borderColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                                        )
+                                    SegmentedItem(
+                                        title = "Phiên bản MB Bank",
+                                        subtitle = mbVersion,
+                                        icon = Icons.Rounded.AccountBalance,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        showDivider = true
+                                    )
+
+                                    SegmentedItem(
+                                        title = "Phiên bản Android",
+                                        subtitle = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+                                        icon = Icons.Rounded.Android,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        showDivider = true
+                                    )
+
+                                    val deviceModel = remember {
+                                        val manufacturer = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+                                        val model = Build.MODEL
+                                        if (model.startsWith(manufacturer, ignoreCase = true)) model else "$manufacturer $model"
+                                    }
+
+                                    SegmentedItem(
+                                        title = "Thiết bị",
+                                        subtitle = deviceModel,
+                                        icon = Icons.Rounded.PhoneAndroid,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        showDivider = true
+                                    )
+
+                                    SegmentedItem(
+                                        title = "Phiên bản PrettieMBee",
+                                        subtitle = "v${BuildConfig.VERSION_NAME} - ${BuildConfig.GIT_HASH}",
+                                        icon = Icons.Rounded.Info,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        showDivider = false
                                     )
                                 }
                             }
                         }
-
-                        // Filter Themes
-                        val filteredThemes = communityThemes.filter { theme ->
-                            val matchCategory = selectedCategory == "Tất cả" || theme.series == selectedCategory
-                            val matchQuery = searchQuery.isBlank() ||
-                                    theme.name.contains(searchQuery, ignoreCase = true) ||
-                                    theme.author.contains(searchQuery, ignoreCase = true) ||
-                                    theme.series.contains(searchQuery, ignoreCase = true)
-                            matchCategory && matchQuery
-                        }
-
-                        // Section Header
-                        item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (selectedCategory == "Tất cả") "Tất cả theme" else selectedCategory,
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                )
-                                Text(
-                                    text = "${filteredThemes.size} theme",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
-                                )
-                            }
-                        }
-
-                        items(filteredThemes, key = { it.id }) { theme ->
-                            ThemeCard(
-                                theme = theme,
-                                isDownloaded = isThemeDownloaded(theme),
-                                onClick = { onSelectTheme(theme) }
-                            )
-                        }
                     }
-                }
 
-                2 -> {
-                    // TAB 2: CÀI ĐẶT (Settings)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
-                    ) {
-                        // Appearance & Customization (KittiSU style)
-                        item {
-                            SegmentedGroup(
-                                title = "Giao diện & Chủ đề"
-                            ) {
-                                SegmentedItem(
-                                    title = "Chế độ nền",
-                                    subtitle = ThemeConfig.themeMode.title,
-                                    icon = when (ThemeConfig.themeMode) {
-                                        AppThemeMode.LIGHT -> Icons.Rounded.LightMode
-                                        AppThemeMode.DARK -> Icons.Rounded.DarkMode
-                                        AppThemeMode.SYSTEM -> Icons.Rounded.Contrast
-                                    },
-                                    iconTint = MaterialTheme.colorScheme.primary,
-                                    onClick = { showThemeModeDialog = true },
-                                    trailingContent = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ChevronRight,
-                                            contentDescription = "Select Mode",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    1 -> {
+                        // TAB 1: KHO THEME (Themes)
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp)
+                        ) {
+                            // Search Bar
+                            item {
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = { searchQuery = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = {
+                                        Text(
+                                            text = "Tìm theme theo tên hoặc tác giả...",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                         )
                                     },
-                                    showDivider = true
-                                )
-
-                                SegmentedItem(
-                                    title = "Màu chủ đạo",
-                                    subtitle = ThemeConfig.themeAccent.title,
-                                    icon = Icons.Rounded.Palette,
-                                    iconTint = ThemeConfig.themeAccent.previewColor,
-                                    trailingContent = {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            AppThemeAccent.entries.forEach { accent ->
-                                                val isSelected = ThemeConfig.themeAccent == accent
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(26.dp)
-                                                        .clip(CircleShape)
-                                                        .background(accent.previewColor)
-                                                        .clickable {
-                                                            ThemeConfig.saveThemeAccent(context, accent)
-                                                        },
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    if (isSelected) {
-                                                        Icon(
-                                                            imageVector = Icons.Rounded.Check,
-                                                            contentDescription = "Selected",
-                                                            tint = Color.White,
-                                                            modifier = Modifier.size(14.dp)
-                                                        )
-                                                    }
-                                                }
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Search,
+                                            contentDescription = "Search",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        if (searchQuery.isNotEmpty()) {
+                                            IconButton(onClick = { searchQuery = "" }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close,
+                                                    contentDescription = "Clear",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
                                             }
                                         }
                                     },
-                                    showDivider = false
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                    )
                                 )
                             }
-                        }
 
-                        // Data & Utilities Group
-                        item {
-                            SegmentedGroup(
-                                title = "Hệ thống & Dữ liệu"
-                            ) {
-                                SegmentedItem(
-                                    title = "Làm mới trạng thái",
-                                    subtitle = "Quét lại quyền root, ứng dụng MB và theme đã cài",
-                                    icon = Icons.Rounded.Refresh,
-                                    iconTint = MaterialTheme.colorScheme.primary,
-                                    onClick = onRefreshStatus,
-                                    trailingContent = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ChevronRight,
-                                            contentDescription = "Refresh",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            // Category Filter Row
+                            item {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    contentPadding = PaddingValues(vertical = 2.dp)
+                                ) {
+                                    items(categories) { category ->
+                                        val isSelected = category == selectedCategory
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = { selectedCategory = category },
+                                            label = {
+                                                Text(
+                                                    text = category,
+                                                    style = MaterialTheme.typography.labelMedium.copy(
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                        fontSize = 12.sp
+                                                    )
+                                                )
+                                            },
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                            ),
+                                            border = FilterChipDefaults.filterChipBorder(
+                                                enabled = true,
+                                                selected = isSelected,
+                                                borderColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                            )
                                         )
-                                    },
-                                    showDivider = true
-                                )
+                                    }
+                                }
+                            }
 
-                                SegmentedItem(
-                                    title = "Nhập theme từ file ZIP",
-                                    subtitle = "Nạp theme tuỳ chỉnh thủ công từ bộ nhớ máy",
-                                    icon = Icons.Rounded.FolderOpen,
-                                    iconTint = MaterialTheme.colorScheme.primary,
-                                    onClick = { zipPickerLauncher.launch("application/zip") },
-                                    trailingContent = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ChevronRight,
-                                            contentDescription = "Import",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            // Filter Themes
+                            val filteredThemes = communityThemes.filter { theme ->
+                                val matchCategory = selectedCategory == "Tất cả" || theme.series == selectedCategory
+                                val matchQuery = searchQuery.isBlank() ||
+                                        theme.name.contains(searchQuery, ignoreCase = true) ||
+                                        theme.author.contains(searchQuery, ignoreCase = true) ||
+                                        theme.series.contains(searchQuery, ignoreCase = true)
+                            matchCategory && matchQuery
+                            }
+
+                            // Section Header
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (selectedCategory == "Tất cả") "Tất cả theme" else selectedCategory,
+                                        style = MaterialTheme.typography.titleSmall.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
-                                    },
-                                    showDivider = true
-                                )
+                                    )
+                                    Text(
+                                        text = "${filteredThemes.size} theme",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                                    )
+                                }
+                            }
 
-                                SegmentedItem(
-                                    title = "Thư mục lưu trữ theme",
-                                    subtitle = "/data/data/anhiutangerine.prettiembee/files/themes",
-                                    icon = Icons.Rounded.Storage,
-                                    iconTint = MaterialTheme.colorScheme.primary,
-                                    showDivider = false
+                            items(filteredThemes, key = { it.id }) { theme ->
+                                ThemeCard(
+                                    theme = theme,
+                                    isDownloaded = isThemeDownloaded(theme),
+                                    onClick = { onSelectTheme(theme) }
                                 )
                             }
                         }
                     }
+
+                    2 -> {
+                        // TAB 2: CÀI ĐẶT (Settings)
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp)
+                        ) {
+                            // MB Bank Configuration Group
+                            item {
+                                SegmentedGroup(
+                                    title = "Cấu hình MB Bank"
+                                ) {
+                                    SegmentedItem(
+                                        title = "Gói ứng dụng mục tiêu",
+                                        subtitle = targetPackage,
+                                        icon = Icons.Rounded.Smartphone,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        onClick = { showPackageDialog = true },
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Edit,
+                                                contentDescription = "Edit Package",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
+                                        showDivider = false
+                                    )
+                                }
+                            }
+
+                            // Appearance & Customization (KittiSU style)
+                            item {
+                                SegmentedGroup(
+                                    title = "Giao diện & Chủ đề"
+                                ) {
+                                    SegmentedItem(
+                                        title = "Chế độ nền",
+                                        subtitle = ThemeConfig.themeMode.title,
+                                        icon = when (ThemeConfig.themeMode) {
+                                            AppThemeMode.LIGHT -> Icons.Rounded.LightMode
+                                            AppThemeMode.DARK -> Icons.Rounded.DarkMode
+                                            AppThemeMode.SYSTEM -> Icons.Rounded.Contrast
+                                        },
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        onClick = { showThemeModeDialog = true },
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Select Mode",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            )
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    SegmentedItem(
+                                        title = "Màu chủ đạo",
+                                        subtitle = ThemeConfig.themeAccent.title,
+                                        icon = Icons.Rounded.Palette,
+                                        iconTint = ThemeConfig.themeAccent.previewColor,
+                                        trailingContent = {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                AppThemeAccent.entries.forEach { accent ->
+                                                    val isSelected = ThemeConfig.themeAccent == accent
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(26.dp)
+                                                            .clip(CircleShape)
+                                                            .background(accent.previewColor)
+                                                            .clickable {
+                                                                ThemeConfig.saveThemeAccent(context, accent)
+                                                            },
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        if (isSelected) {
+                                                            Icon(
+                                                                imageVector = Icons.Rounded.Check,
+                                                                contentDescription = "Selected",
+                                                                tint = Color.White,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        showDivider = false
+                                    )
+                                }
+                            }
+
+                            // Data & Utilities Group
+                            item {
+                                SegmentedGroup(
+                                    title = "Hệ thống & Dữ liệu"
+                                ) {
+                                    SegmentedItem(
+                                        title = "Làm mới trạng thái",
+                                        subtitle = "Quét lại quyền root và kiểm tra ứng dụng MB",
+                                        icon = Icons.Rounded.Refresh,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        onClick = onRefreshStatus,
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Refresh",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            )
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    SegmentedItem(
+                                        title = "Nhập theme từ file ZIP",
+                                        subtitle = "Nạp theme tuỳ chỉnh thủ công từ bộ nhớ máy",
+                                        icon = Icons.Rounded.FolderOpen,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        onClick = { zipPickerLauncher.launch("application/zip") },
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Import",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            )
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    SegmentedItem(
+                                        title = "Thư mục lưu trữ theme",
+                                        subtitle = "/data/data/anhiutangerine.prettiembee/files/themes",
+                                        icon = Icons.Rounded.Storage,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        showDivider = false
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+
+            // Floating Bottom Bar truly floating over content dock-style
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                FloatingBottomBar(
+                    selectedIndex = selectedTab,
+                    onItemSelected = {
+                        selectedTab = it
+                        isScrollingDown.value = false
+                    },
+                    visible = !isScrollingDown.value
+                )
             }
         }
     }

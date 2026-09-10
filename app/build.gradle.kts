@@ -5,6 +5,19 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val gitCommitHash: String = try {
+    ProcessBuilder("git", "rev-parse", "--short=7", "HEAD")
+        .directory(project.rootDir)
+        .start()
+        .inputStream
+        .bufferedReader()
+        .readText()
+        .trim()
+        .ifEmpty { "819690c" }
+} catch (e: Exception) {
+    "819690c"
+}
+
 android {
     namespace = "anhiutangerine.prettiembee"
     compileSdk = 34
@@ -14,7 +27,8 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0"
+        buildConfigField("String", "GIT_HASH", "\"$gitCommitHash\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -43,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
