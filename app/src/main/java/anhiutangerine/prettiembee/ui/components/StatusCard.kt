@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
@@ -19,8 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import anhiutangerine.prettiembee.R
-import anhiutangerine.prettiembee.ui.theme.ErrorRed
-import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 
 @Composable
 fun StatusCard(
@@ -62,9 +59,25 @@ fun StatusCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Compute current app state headline and subtitle
+            val (headline, subtitle) = when {
+                !isRootGranted -> Pair(
+                    "Chưa có quyền root",
+                    "Cần cấp quyền SuperUser qua Magisk, KernelSU hoặc APatch"
+                )
+                !isMbInstalled -> Pair(
+                    "Chưa cài đặt MB Bank",
+                    "Không tìm thấy gói $targetPackage trên thiết bị"
+                )
+                else -> Pair(
+                    "Sẵn sàng hoạt động",
+                    "SuperUser và MB Bank đã sẵn sàng để áp dụng theme"
+                )
+            }
+
             // Main Status Headline
             Text(
-                text = if (isRootGranted) "Sẵn sàng hoạt động" else "Chưa có quyền root",
+                text = headline,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
@@ -75,48 +88,28 @@ fun StatusCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = if (isRootGranted) "Quyền SuperUser đã sẵn sàng để áp dụng theme" else "Cần cấp quyền root qua Magisk, KernelSU hoặc APatch",
+                text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Status Badges Row
+            // Status Badges Row (Material 3 minimal tags, no AI-slop status dots)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                StatusPill(
-                    label = if (isRootGranted) "Root: Đã cấp" else "Root: Chưa có",
-                    isPositive = isRootGranted
-                )
+                StatusTag(label = if (isRootGranted) "Root: Đã cấp" else "Root: Chưa có")
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                StatusPill(
-                    label = if (isMbInstalled) "MB Bank: Đã cài" else "MB Bank: Chưa cài",
-                    isPositive = isMbInstalled
-                )
+                StatusTag(label = if (isMbInstalled) "MB Bank: Đã cài" else "MB Bank: Chưa cài")
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-                ) {
-                    Text(
-                        text = "$installedThemeCount theme trong app",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
+                StatusTag(label = "$installedThemeCount theme trong app")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -184,37 +177,24 @@ fun StatusCard(
 }
 
 @Composable
-private fun StatusPill(
+private fun StatusTag(
     label: String,
-    isPositive: Boolean
+    modifier: Modifier = Modifier
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = if (isPositive) SuccessGreen.copy(alpha = 0.14f) else ErrorRed.copy(alpha = 0.14f),
-        border = BorderStroke(
-            1.dp,
-            if (isPositive) SuccessGreen.copy(alpha = 0.25f) else ErrorRed.copy(alpha = 0.25f)
-        )
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        modifier = modifier
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(if (isPositive) SuccessGreen else ErrorRed)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.sp,
-                    color = if (isPositive) SuccessGreen else ErrorRed
-                )
-            )
-        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Medium,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        )
     }
 }

@@ -8,18 +8,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -28,28 +29,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
 data class BottomBarItem(
-    val label: String,
     val icon: ImageVector,
-    val selectedIcon: ImageVector
+    val contentDescription: String
 )
 
 val NavigationItems = listOf(
     BottomBarItem(
-        label = "Kho theme",
-        icon = Icons.Rounded.Palette,
-        selectedIcon = Icons.Rounded.Palette
+        icon = Icons.Rounded.Home,
+        contentDescription = "Trang chủ"
     ),
     BottomBarItem(
-        label = "Hệ thống",
-        icon = Icons.Rounded.Tune,
-        selectedIcon = Icons.Rounded.Tune
+        icon = Icons.Rounded.Palette,
+        contentDescription = "Kho theme"
+    ),
+    BottomBarItem(
+        icon = Icons.Rounded.Settings,
+        contentDescription = "Cài đặt"
     )
 )
 
@@ -62,16 +62,17 @@ fun FloatingBottomBar(
     visible: Boolean = true
 ) {
     val density = LocalDensity.current
-    val itemWidth = 118.dp
-    val itemHeight = 44.dp
+    val itemSize = 56.dp
     val itemSpacing = 6.dp
     val containerPadding = 6.dp
 
-    val itemWidthPx = with(density) { itemWidth.toPx() }
+    val itemSizePx = with(density) { itemSize.toPx() }
     val itemSpacingPx = with(density) { itemSpacing.toPx() }
 
+    val navBarWidth = (itemSize * items.size) + (itemSpacing * (items.size - 1)) + (containerPadding * 2)
+
     val animatedSelectedIndex by animateFloatAsState(
-        targetValue = selectedIndex.toFloat(),
+        targetValue = selectedIndex.toFloat().coerceIn(0f, (items.size - 1).toFloat()),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -89,36 +90,36 @@ fun FloatingBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 14.dp),
             contentAlignment = Alignment.Center
         ) {
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
-                shadowElevation = 6.dp,
-                tonalElevation = 2.dp,
-                border = androidx.compose.foundation.BorderStroke(
+                shadowElevation = 8.dp,
+                tonalElevation = 3.dp,
+                border = BorderStroke(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
-                )
+                ),
+                modifier = Modifier.width(navBarWidth)
             ) {
                 Box(
                     modifier = Modifier.padding(containerPadding)
                 ) {
-                    // Animated sliding indicator pill
-                    val indicatorOffset = (itemWidthPx + itemSpacingPx) * animatedSelectedIndex
+                    // Animated sliding indicator pill (KittiSU style)
+                    val indicatorOffset = (itemSizePx + itemSpacingPx) * animatedSelectedIndex
                     Box(
                         modifier = Modifier
                             .offset { IntOffset(x = indicatorOffset.roundToInt(), y = 0) }
-                            .width(itemWidth)
-                            .height(itemHeight)
+                            .size(itemSize)
                             .background(
                                 color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = RoundedCornerShape(18.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                     )
 
-                    // Tab Items Row
+                    // 3 Icon Items Row (Icon-only, no text)
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(itemSpacing),
                         verticalAlignment = Alignment.CenterVertically
@@ -129,9 +130,8 @@ fun FloatingBottomBar(
 
                             Box(
                                 modifier = Modifier
-                                    .width(itemWidth)
-                                    .height(itemHeight)
-                                    .clip(RoundedCornerShape(18.dp))
+                                    .size(itemSize)
+                                    .clip(RoundedCornerShape(16.dp))
                                     .clickable(
                                         interactionSource = interactionSource,
                                         indication = null,
@@ -139,34 +139,16 @@ fun FloatingBottomBar(
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = if (isSelected) item.selectedIcon else item.icon,
-                                        contentDescription = item.label,
-                                        tint = if (isSelected) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                        },
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = item.label,
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            fontSize = 13.sp,
-                                            color = if (isSelected) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
-                                            }
-                                        )
-                                    )
-                                }
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.contentDescription,
+                                    tint = if (isSelected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    },
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         }
                     }

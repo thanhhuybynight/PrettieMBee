@@ -21,6 +21,7 @@ import anhiutangerine.prettiembee.ui.components.TargetThemePickerBottomSheet
 import anhiutangerine.prettiembee.ui.screens.HomeScreen
 import anhiutangerine.prettiembee.ui.screens.ThemeDetailSheet
 import anhiutangerine.prettiembee.ui.theme.PrettieMBeeTheme
+import anhiutangerine.prettiembee.ui.theme.ThemeConfig
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        ThemeConfig.load(applicationContext)
         rootRepository = RootRepository(applicationContext)
         themeRepository = ThemeRepository(applicationContext)
 

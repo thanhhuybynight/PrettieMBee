@@ -20,6 +20,16 @@ val LavenderDark = SakuraPinkDark
 val ElectricBlue = Color(0xFF64B5F6)
 val CyanAccent = Color(0xFF80DEEA)
 
+// Accent Color Palettes (KittiSU theme options)
+val OceanBlue = Color(0xFF1976D2)
+val OceanBlueLight = Color(0xFF64B5F6)
+val MintGreen = Color(0xFF2E7D32)
+val MintGreenLight = Color(0xFF81C784)
+val LavenderPurple = Color(0xFF7B1FA2)
+val LavenderPurpleLight = Color(0xFFBA68C8)
+val AmberOrange = Color(0xFFE65100)
+val AmberOrangeLight = Color(0xFFFFB74D)
+
 // Dark Theme Surfaces (Pitch Charcoal & Monochromatic Soft Containers)
 val DarkBackground = Color(0xFF121316)
 val DarkSurface = Color(0xFF191A1F)
