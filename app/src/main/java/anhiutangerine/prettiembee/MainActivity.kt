@@ -164,6 +164,14 @@ class MainActivity : ComponentActivity() {
                                     }
                                     injectResult = res
                                     isInjecting = false
+                                    if (res.isSuccess) {
+                                        ThemeConfig.saveAppliedTheme(
+                                            context = applicationContext,
+                                            newTheme = config.sourceTheme.name,
+                                            originalTheme = config.targetName,
+                                            isPriority = config.usePriorityVariant
+                                        )
+                                    }
                                     refreshAll()
                                 }
                             },

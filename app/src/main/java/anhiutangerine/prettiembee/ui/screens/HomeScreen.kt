@@ -20,21 +20,27 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Android
+import androidx.compose.material.icons.rounded.AspectRatio
+import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.FormatColorFill
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Opacity
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,6 +70,7 @@ import anhiutangerine.prettiembee.ui.theme.AppThemeAccent
 import anhiutangerine.prettiembee.ui.theme.AppThemeMode
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun rememberScrollConnection(
@@ -120,7 +127,26 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showPackageDialog by remember { mutableStateOf(false) }
     var showThemeModeDialog by remember { mutableStateOf(false) }
+    var showDpiDialog by remember { mutableStateOf(false) }
     var tempPackageInput by remember { mutableStateOf(targetPackage) }
+    var tempDpiInput by remember { mutableIntStateOf(ThemeConfig.appDpi) }
+
+    // Image Pickers for Status Card & App Background (KittiSU style)
+    val statusCardBgPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            ThemeConfig.saveStatusCardBackground(context, uri)
+        }
+    }
+
+    val appBgPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            ThemeConfig.saveAppBackground(context, uri)
+        }
+    }
 
     // Scroll connection for floating navbar auto hide/show (KittiSU style)
     val isScrollingDown = remember { mutableStateOf(false) }
@@ -266,29 +292,141 @@ fun HomeScreen(
         )
     }
 
+    if (showDpiDialog) {
+        AlertDialog(
+            onDismissRequest = { showDpiDialog = false },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = {
+                Text(
+                    text = "Mật độ hiển thị (DPI)",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Điều chỉnh tỷ lệ giao diện riêng cho PrettieMBee (KittiSU style):",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val presets = listOf(
+                        0 to "Mặc định (Theo hệ thống)",
+                        320 to "Nhỏ (320 DPI)",
+                        380 to "Chuẩn (380 DPI)",
+                        420 to "Vừa (420 DPI)",
+                        480 to "Lớn (480 DPI)"
+                    )
+
+                    presets.forEach { (presetDpi, label) ->
+                        val isSelected = tempDpiInput == presetDpi
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { tempDpiInput = presetDpi }
+                                .padding(vertical = 6.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = { tempDpiInput = presetDpi },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Tuỳ chỉnh:",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                        Text(
+                            text = if (tempDpiInput <= 0) "Mặc định" else "$tempDpiInput DPI",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Slider(
+                        value = if (tempDpiInput <= 0) 380f else tempDpiInput.toFloat(),
+                        onValueChange = { tempDpiInput = it.roundToInt() },
+                        valueRange = 280f..560f
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        ThemeConfig.saveAppDpi(context, tempDpiInput)
+                        showDpiDialog = false
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text("Áp dụng", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDpiDialog = false },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Huỷ")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            modifier = Modifier.size(36.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_prettiembee_logo),
-                                    contentDescription = "Logo",
-                                    modifier = Modifier.size(28.dp)
-                                )
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_prettiembee_logo),
+                                        contentDescription = "Logo",
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
                             }
-                        }
 
-                        Column {
                             Text(
                                 text = "PrettieMBee",
                                 style = MaterialTheme.typography.titleMedium.copy(
@@ -297,14 +435,17 @@ fun HomeScreen(
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Text(
-                                text = "v${BuildConfig.VERSION_NAME} - ${BuildConfig.GIT_HASH}",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 11.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
                         }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = "v${BuildConfig.VERSION_NAME} - ${BuildConfig.GIT_HASH}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
                     }
                 },
                 actions = {
@@ -344,12 +485,12 @@ fun HomeScreen(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = if (ThemeConfig.appBackgroundUri != null) Color.Transparent else MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = if (ThemeConfig.appBackgroundUri != null) Color.Transparent else MaterialTheme.colorScheme.background,
         modifier = modifier
     ) { innerPadding ->
         Box(
@@ -377,7 +518,12 @@ fun HomeScreen(
                             item {
                                 StatusCard(
                                     isRootGranted = isRootGranted,
-                                    isMbInstalled = isMbInstalled
+                                    isMbInstalled = isMbInstalled,
+                                    appliedNewTheme = ThemeConfig.appliedNewThemeName,
+                                    appliedOriginalTheme = ThemeConfig.appliedOriginalThemeName,
+                                    appliedIsPriority = ThemeConfig.appliedIsPriority,
+                                    backgroundUri = ThemeConfig.statusCardBackgroundUri,
+                                    cardAlpha = ThemeConfig.cardAlpha
                                 )
                             }
 
@@ -602,16 +748,39 @@ fun HomeScreen(
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         },
-                                        showDivider = false
+                                        showDivider = ThemeConfig.appliedNewThemeName != null
                                     )
+
+                                    if (ThemeConfig.appliedNewThemeName != null) {
+                                        val prioText = if (ThemeConfig.appliedIsPriority) " - Prio" else ""
+                                        SegmentedItem(
+                                            title = "Theme đang kích hoạt",
+                                            subtitle = "${ThemeConfig.appliedNewThemeName} - ${ThemeConfig.appliedOriginalThemeName}$prioText",
+                                            icon = Icons.Rounded.Check,
+                                            iconTint = MaterialTheme.colorScheme.primary,
+                                            trailingContent = {
+                                                TextButton(
+                                                    onClick = { ThemeConfig.clearAppliedTheme(context) }
+                                                ) {
+                                                    Text(
+                                                        text = "Đặt lại",
+                                                        color = MaterialTheme.colorScheme.error,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                }
+                                            },
+                                            showDivider = false
+                                        )
+                                    }
                                 }
                             }
 
                             // Appearance & Customization (KittiSU style)
                             item {
                                 SegmentedGroup(
-                                    title = "Giao diện & Chủ đề"
+                                    title = "Giao diện & Chủ đề (KittiSU Style)"
                                 ) {
+                                    // 1. Chế độ nền
                                     SegmentedItem(
                                         title = "Chế độ nền",
                                         subtitle = ThemeConfig.themeMode.title,
@@ -632,24 +801,26 @@ fun HomeScreen(
                                         showDivider = true
                                     )
 
+                                    // 2. Màu chủ đạo
                                     SegmentedItem(
                                         title = "Màu chủ đạo",
-                                        subtitle = ThemeConfig.themeAccent.title,
+                                        subtitle = if (ThemeConfig.useBackgroundSeedColor && ThemeConfig.extractedSeedColor != null) "Đang dùng màu từ hình nền" else ThemeConfig.themeAccent.title,
                                         icon = Icons.Rounded.Palette,
-                                        iconTint = ThemeConfig.themeAccent.previewColor,
+                                        iconTint = if (ThemeConfig.useBackgroundSeedColor && ThemeConfig.extractedSeedColor != null) ThemeConfig.extractedSeedColor!! else ThemeConfig.themeAccent.previewColor,
                                         trailingContent = {
                                             Row(
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 AppThemeAccent.entries.forEach { accent ->
-                                                    val isSelected = ThemeConfig.themeAccent == accent
+                                                    val isSelected = !ThemeConfig.useBackgroundSeedColor && ThemeConfig.themeAccent == accent
                                                     Box(
                                                         modifier = Modifier
                                                             .size(26.dp)
                                                             .clip(CircleShape)
                                                             .background(accent.previewColor)
                                                             .clickable {
+                                                                ThemeConfig.saveUseBackgroundSeedColor(context, false)
                                                                 ThemeConfig.saveThemeAccent(context, accent)
                                                             },
                                                         contentAlignment = Alignment.Center
@@ -665,6 +836,244 @@ fun HomeScreen(
                                                     }
                                                 }
                                             }
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    // 3. Lấy màu từ hình nền (Pick color from background)
+                                    SegmentedItem(
+                                        title = "Lấy màu từ hình nền",
+                                        subtitle = if (ThemeConfig.appBackgroundUri != null) "Tự động trích xuất màu nhấn từ ảnh nền app" else "Cần đặt hình nền app trước",
+                                        icon = Icons.Rounded.FormatColorFill,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        trailingContent = {
+                                            Switch(
+                                                checked = ThemeConfig.useBackgroundSeedColor,
+                                                onCheckedChange = { isChecked ->
+                                                    ThemeConfig.saveUseBackgroundSeedColor(context, isChecked)
+                                                },
+                                                enabled = ThemeConfig.appBackgroundUri != null
+                                            )
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    // 4. Nền Status Card (Custom background for status card)
+                                    SegmentedItem(
+                                        title = "Nền Status Card",
+                                        subtitle = if (ThemeConfig.statusCardBackgroundUri != null) "Đã cài ảnh nền riêng cho thẻ" else "Mặc định (Không nền)",
+                                        icon = Icons.Rounded.Wallpaper,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        trailingContent = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                FilledTonalButton(
+                                                    onClick = { statusCardBgPicker.launch("image/*") },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (ThemeConfig.statusCardBackgroundUri != null) "Đổi" else "Chọn ảnh",
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                                if (ThemeConfig.statusCardBackgroundUri != null) {
+                                                    IconButton(
+                                                        onClick = { ThemeConfig.saveStatusCardBackground(context, null) }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Delete,
+                                                            contentDescription = "Xoá nền thẻ",
+                                                            tint = MaterialTheme.colorScheme.error,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    // 5. Nền toàn ứng dụng (Full screen app background)
+                                    SegmentedItem(
+                                        title = "Nền toàn ứng dụng",
+                                        subtitle = if (ThemeConfig.appBackgroundUri != null) "Đã cài hình nền app" else "Mặc định (Không nền)",
+                                        icon = Icons.Rounded.Wallpaper,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        trailingContent = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                FilledTonalButton(
+                                                    onClick = { appBgPicker.launch("image/*") },
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (ThemeConfig.appBackgroundUri != null) "Đổi" else "Chọn ảnh",
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                                if (ThemeConfig.appBackgroundUri != null) {
+                                                    IconButton(
+                                                        onClick = { ThemeConfig.saveAppBackground(context, null) }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Delete,
+                                                            contentDescription = "Xoá nền app",
+                                                            tint = MaterialTheme.colorScheme.error,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        showDivider = true
+                                    )
+
+                                    // 6. Background Darkness Adjustment (chỉ hiện khi có nền app)
+                                    if (ThemeConfig.appBackgroundUri != null) {
+                                        Column(
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                        modifier = Modifier.size(36.dp)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = Icons.Rounded.BrightnessMedium,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.size(20.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Column {
+                                                        Text(
+                                                            text = "Độ tối nền",
+                                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        Text(
+                                                            text = "Điều chỉnh độ sẫm của hình nền app",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                                                        )
+                                                    }
+                                                }
+                                                Text(
+                                                    text = "${(ThemeConfig.backgroundDim * 100).roundToInt()}%",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Slider(
+                                                value = ThemeConfig.backgroundDim,
+                                                onValueChange = { ThemeConfig.saveBackgroundDim(context, it) },
+                                                valueRange = 0f..0.9f
+                                            )
+                                        }
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                                            thickness = 0.8.dp
+                                        )
+                                    }
+
+                                    // 7. Card Transparency (Card Alpha)
+                                    Column(
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Surface(
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Opacity,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+                                                }
+                                                Column {
+                                                    Text(
+                                                        text = "Độ trong suốt thẻ (Card Alpha)",
+                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = "Độ mờ thẻ hiển thị xuyên hình nền",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                                                    )
+                                                }
+                                            }
+                                            Text(
+                                                text = "${(ThemeConfig.cardAlpha * 100).roundToInt()}%",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Slider(
+                                            value = ThemeConfig.cardAlpha,
+                                            onValueChange = { ThemeConfig.saveCardAlpha(context, it) },
+                                            valueRange = 0.1f..1f
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                                        thickness = 0.8.dp
+                                    )
+
+                                    // 8. DPI ứng dụng
+                                    SegmentedItem(
+                                        title = "DPI ứng dụng",
+                                        subtitle = if (ThemeConfig.appDpi <= 0) "Mặc định (Theo hệ thống)" else "${ThemeConfig.appDpi} DPI",
+                                        icon = Icons.Rounded.AspectRatio,
+                                        iconTint = MaterialTheme.colorScheme.primary,
+                                        onClick = {
+                                            tempDpiInput = ThemeConfig.appDpi
+                                            showDpiDialog = true
+                                        },
+                                        trailingContent = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.ChevronRight,
+                                                contentDescription = "Chỉnh DPI",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            )
                                         },
                                         showDivider = false
                                     )

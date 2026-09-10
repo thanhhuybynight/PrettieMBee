@@ -36,7 +36,7 @@ fun SegmentedGroup(
         }
         Surface(
             shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
+            color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = anhiutangerine.prettiembee.ui.theme.ThemeConfig.cardAlpha),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
             modifier = Modifier.fillMaxWidth()
         ) {
