@@ -386,26 +386,34 @@ class RootRepository(private val context: Context) {
             // Ensure source theme directory is accessible by root
             val myPkg = context.packageName
             Shell.cmd(
-                "chmod 755 '/data/data/$myPkg' 2>/dev/null",
-                "chmod 755 '/data/data/$myPkg/files' 2>/dev/null",
-                "chmod 755 '/data/user/0/$myPkg' 2>/dev/null",
-                "chmod 755 '/data/user/0/$myPkg/files' 2>/dev/null",
-                "chmod -R 755 '${themeDir.absolutePath}' 2>/dev/null"
+                "chmod 755 '/data/data/$myPkg' '/data/data/$myPkg/files' 2>/dev/null || true",
+                "chmod 755 '/data/user/0/$myPkg' '/data/user/0/$myPkg/files' 2>/dev/null || true",
+                "chmod -R 755 '${themeDir.absolutePath}' 2>/dev/null || true"
             ).exec()
 
             // 5. Target folder
             val themeBase = "$dataDir/app_flutter/app_theme/unzip"
             val targetDir = "$themeBase/${config.targetUuid}"
             log("[Tiến trình] Chuẩn bị thư mục đích: $targetDir")
-            val prepCmd = Shell.cmd(
-                "mkdir -p '$targetDir'",
-                "rm -rf '$targetDir/images' '$targetDir/theme'",
-                "mkdir -p '$targetDir/images' '$targetDir/theme'"
-            ).exec()
+            val prepScript = """
+                exec 2>&1
+                mkdir -p '$targetDir'
+                rm -rf '$targetDir/images' '$targetDir/theme'
+                mkdir -p '$targetDir/images'
+                mkdir -p '$targetDir/theme'
+            """.trimIndent()
+            val prepCmd = Shell.cmd(prepScript).exec()
+            val prepOutput = (prepCmd.out + prepCmd.err).filter { it.isNotBlank() }.joinToString("\n")
+            if (prepOutput.isNotBlank()) {
+                log("[Shell Prep] $prepOutput")
+            }
 
-            if (!prepCmd.isSuccess) {
-                val prepErr = (prepCmd.err + prepCmd.out).filter { it.isNotBlank() }.joinToString("\n")
-                val err = "Không thể khởi tạo thư mục đích:\n$prepErr"
+            // Verify target directory exists
+            val testTarget = Shell.cmd("test -d '$targetDir' && echo 1 || echo 0").exec()
+            val targetExists = testTarget.out.firstOrNull()?.trim() == "1"
+
+            if (!targetExists) {
+                val err = "Không thể khởi tạo thư mục đích:\n${prepOutput.ifBlank { "Lệnh mkdir không thể tạo thư mục tại $targetDir" }}"
                 log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
@@ -420,7 +428,8 @@ class RootRepository(private val context: Context) {
             var copySucceeded = false
             val copyScript = """
                 exec 2>&1
-                mkdir -p '$targetDir/images' '$targetDir/theme'
+                mkdir -p '$targetDir/images'
+                mkdir -p '$targetDir/theme'
                 if ! cp -rf '$resolvedImages/.' '$targetDir/images/'; then
                     echo "[FALLBACK_SHELL] Lệnh cp ảnh thất bại, thử dùng pipeline tar..."
                     (cd '$resolvedImages' && tar -cf - .) | (cd '$targetDir/images' && tar -xf -)
