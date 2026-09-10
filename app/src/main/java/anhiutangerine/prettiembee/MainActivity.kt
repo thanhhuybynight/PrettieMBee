@@ -95,7 +95,10 @@ class MainActivity : ComponentActivity() {
                         installedThemes = installedThemes,
                         communityThemes = communityThemes,
                         isThemeDownloaded = { theme -> themeRepository.isThemeDownloaded(theme) },
-                        onRefreshStatus = { refreshAll() },
+                        onRefreshStatus = {
+                            Toast.makeText(applicationContext, "Đang làm mới dữ liệu và đồng bộ kho theme...", Toast.LENGTH_SHORT).show()
+                            refreshAll()
+                        },
                         onChangePackage = { newPkg ->
                             targetPackage = newPkg
                             rootRepository.targetPackage = newPkg

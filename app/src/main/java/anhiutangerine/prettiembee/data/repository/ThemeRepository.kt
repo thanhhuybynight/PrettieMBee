@@ -42,17 +42,64 @@ class ThemeRepository(private val context: Context) {
         return tokenFile.exists() && imagesDir.exists() && (imagesDir.listFiles()?.isNotEmpty() == true)
     }
 
-    suspend fun getCommunityThemes(): List<CommunityTheme> = withContext(Dispatchers.IO) {
+    companion object {
+        const val REMOTE_CATALOG_URL = "https://raw.githubusercontent.com/thanhhuybynight/PrettieMBee/theme/community_catalog.json"
+    }
+
+    private val remoteCatalogCacheFile: File
+        get() = File(context.filesDir, "remote_community_catalog.json")
+
+    suspend fun getCommunityThemes(forceRefresh: Boolean = false): List<CommunityTheme> = withContext(Dispatchers.IO) {
         val baseList = mutableListOf<CommunityTheme>()
+        var jsonContent: String? = null
+
+        // Try fetching online catalog from GitHub theme branch
         try {
-            context.assets.open("community_catalog.json").use { stream ->
-                InputStreamReader(stream).use { reader ->
-                    val content = reader.readText()
-                    baseList.addAll(json.decodeFromString<List<CommunityTheme>>(content))
+            val url = URL(REMOTE_CATALOG_URL)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 12000
+                instanceFollowRedirects = true
+            }
+            if (conn.responseCode in 200..299) {
+                val fetched = conn.inputStream.bufferedReader().use { it.readText() }
+                if (fetched.isNotBlank()) {
+                    jsonContent = fetched
+                    try {
+                        remoteCatalogCacheFile.writeText(fetched)
+                    } catch (_: Exception) {}
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Network failed or offline, fallback to cache or asset
+        }
+
+        // If remote fetch failed, use cached remote catalog
+        if (jsonContent == null && remoteCatalogCacheFile.exists()) {
+            try {
+                jsonContent = remoteCatalogCacheFile.readText()
+            } catch (_: Exception) {}
+        }
+
+        // Fallback to local asset if still null
+        if (jsonContent == null) {
+            try {
+                context.assets.open("community_catalog.json").use { stream ->
+                    InputStreamReader(stream).use { reader ->
+                        jsonContent = reader.readText()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        jsonContent?.let { content ->
+            try {
+                baseList.addAll(json.decodeFromString<List<CommunityTheme>>(content))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         // Add custom imported themes
@@ -87,16 +134,41 @@ class ThemeRepository(private val context: Context) {
             destDir.mkdirs()
 
             val tempZip = File(context.cacheDir, "${theme.id}_temp.zip")
-            val url = URL(downloadUrl)
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 15000
-            conn.readTimeout = 30000
-            conn.instanceFollowRedirects = true
+            var currentUrl = downloadUrl
+            var conn: HttpURLConnection? = null
+            var redirectCount = 0
 
-            val fileLength = conn.contentLength
-            conn.inputStream.use { input ->
+            while (redirectCount < 5) {
+                val url = URL(currentUrl)
+                conn = url.openConnection() as HttpURLConnection
+                conn.connectTimeout = 15000
+                conn.readTimeout = 60000
+                conn.instanceFollowRedirects = true
+
+                val code = conn.responseCode
+                if (code == HttpURLConnection.HTTP_MOVED_PERM ||
+                    code == HttpURLConnection.HTTP_MOVED_TEMP ||
+                    code == 307 || code == 308) {
+                    val location = conn.getHeaderField("Location")
+                    conn.disconnect()
+                    if (!location.isNullOrBlank()) {
+                        currentUrl = location
+                        redirectCount++
+                        continue
+                    }
+                }
+                break
+            }
+
+            val finalConn = conn ?: return@withContext Result.failure(Exception("Không thể kết nối đến máy chủ"))
+            if (finalConn.responseCode !in 200..299) {
+                return@withContext Result.failure(Exception("HTTP error ${finalConn.responseCode}: ${finalConn.responseMessage}"))
+            }
+
+            val fileLength = finalConn.contentLengthLong.takeIf { it > 0 } ?: finalConn.contentLength.toLong()
+            finalConn.inputStream.use { input ->
                 FileOutputStream(tempZip).use { output ->
-                    val buffer = ByteArray(8192)
+                    val buffer = ByteArray(16384)
                     var total: Long = 0
                     var count: Int
                     while (input.read(buffer).also { count = it } != -1) {
@@ -112,6 +184,7 @@ class ThemeRepository(private val context: Context) {
             // Unpack tempZip into destDir
             unzipFile(tempZip, destDir)
             tempZip.delete()
+            normalizeExtractedStructure(destDir)
 
             Result.success(destDir)
         } catch (e: Exception) {
