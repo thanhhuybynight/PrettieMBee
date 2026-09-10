@@ -25,7 +25,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Error
-import androidx.compose.material.icons.rounded.RocketLaunch
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,7 +47,7 @@ import anhiutangerine.prettiembee.ui.theme.DarkBackground
 import anhiutangerine.prettiembee.ui.theme.ErrorRed
 import anhiutangerine.prettiembee.ui.theme.LightBackground
 import anhiutangerine.prettiembee.ui.theme.OledBackground
-import anhiutangerine.prettiembee.ui.theme.SakuraPink
+
 import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
 import coil.compose.AsyncImage
@@ -95,8 +95,7 @@ fun FlashScreen(
     logs: List<String>,
     status: FlashingStatus,
     failedReason: String? = null,
-    onBack: () -> Unit,
-    onLaunchMb: () -> Unit
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -245,26 +244,7 @@ fun FlashScreen(
                     enter = fadeIn() + scaleIn(),
                     exit = fadeOut() + scaleOut()
                 ) {
-                    if (status == FlashingStatus.SUCCESS) {
-                        ExtendedFloatingActionButton(
-                            onClick = onLaunchMb,
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.RocketLaunch,
-                                    contentDescription = "Mở MB Bank"
-                                )
-                            },
-                            text = {
-                                Text(
-                                    text = "Mở MB Bank",
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            containerColor = SakuraPink,
-                            contentColor = Color.White,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    } else if (status == FlashingStatus.FAILED) {
+                    if (status == FlashingStatus.FAILED) {
                         ExtendedFloatingActionButton(
                             onClick = onBack,
                             icon = {

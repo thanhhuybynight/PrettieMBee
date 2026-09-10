@@ -6,8 +6,11 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -1207,22 +1210,6 @@ fun HomeScreen(
                                     )
 
                                     SegmentedItem(
-                                        title = "Nhập theme từ file ZIP",
-                                        subtitle = "Nạp theme tuỳ chỉnh thủ công từ bộ nhớ máy",
-                                        icon = Icons.Rounded.FolderOpen,
-                                        iconTint = MaterialTheme.colorScheme.primary,
-                                        onClick = { zipPickerLauncher.launch("application/zip") },
-                                        trailingContent = {
-                                            Icon(
-                                                imageVector = Icons.Rounded.ChevronRight,
-                                                contentDescription = "Import",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                            )
-                                        },
-                                        showDivider = true
-                                    )
-
-                                    SegmentedItem(
                                         title = "Thư mục lưu trữ theme",
                                         subtitle = context.filesDir.resolve("themes").absolutePath,
                                         icon = Icons.Rounded.Storage,
@@ -1256,6 +1243,35 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+
+            // Floating ZIP Import Button above navbar (Settings tab only)
+            AnimatedVisibility(
+                visible = selectedTab == 2 && !isScrollingDown.value,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 90.dp)
+            ) {
+                ExtendedFloatingActionButton(
+                    onClick = { zipPickerLauncher.launch("application/zip") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.FolderOpen,
+                            contentDescription = "Nạp ZIP"
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "Nạp ZIP",
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = RoundedCornerShape(16.dp)
+                )
             }
 
             // Floating Bottom Bar truly floating over content dock-style

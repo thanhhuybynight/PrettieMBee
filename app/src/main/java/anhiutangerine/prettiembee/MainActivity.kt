@@ -98,14 +98,7 @@ class MainActivity : ComponentActivity() {
                             logs = injectLogs,
                             status = flashingStatus,
                             failedReason = flashFailedReason,
-                            onBack = { isFlashScreenOpen = false },
-                            onLaunchMb = {
-                                rootRepository.launchMbBank(
-                                    useDeeplink = activeInstallConfig?.autoLaunchDeeplink == true,
-                                    targetUuid = activeInstallConfig?.targetUuid
-                                )
-                                isFlashScreenOpen = false
-                            }
+                            onBack = { isFlashScreenOpen = false }
                         )
                     } else {
                         HomeScreen(
@@ -210,6 +203,11 @@ class MainActivity : ComponentActivity() {
                                             isPriority = config.usePriorityVariant
                                         )
                                         flashingStatus = FlashingStatus.SUCCESS
+                                        // Auto-launch MB Bank after successful install
+                                        rootRepository.launchMbBank(
+                                            useDeeplink = config.autoLaunchDeeplink,
+                                            targetUuid = config.targetUuid
+                                        )
                                     } else {
                                         val err = res.errorMessage ?: "Có lỗi xảy ra trong quá trình cài đặt"
                                         flashFailedReason = err
