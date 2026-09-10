@@ -168,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                         ThemeConfig.saveAppliedTheme(
                                             context = applicationContext,
                                             newTheme = config.sourceTheme.name,
-                                            originalTheme = config.targetName,
+                                            originalTheme = currentTargetName,
                                             isPriority = config.usePriorityVariant
                                         )
                                     }
