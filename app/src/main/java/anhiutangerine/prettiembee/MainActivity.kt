@@ -158,35 +158,25 @@ class MainActivity : ComponentActivity() {
                                     // Check if theme files exist locally
                                     var themeDir = themeRepository.getThemeDir(config.sourceTheme.id)
                                     if (!themeRepository.isThemeDownloaded(config.sourceTheme)) {
-                                        injectLogs.add("- [Tải về] Theme chưa có sẵn trong máy. Đang tải từ máy chủ...")
+                                        injectLogs.add("- Đang tải theme từ máy chủ...")
                                         val dlRes = themeRepository.downloadTheme(config.sourceTheme) { progress ->
                                             val pct = (progress * 100).toInt()
                                             if (pct % 25 == 0) {
-                                                injectLogs.add("- [Tải về] Tiến độ: $pct%")
+                                                injectLogs.add("- Tiến độ tải: $pct%")
                                             }
                                         }
                                         if (dlRes.isFailure) {
                                             val err = "Tải theme thất bại: ${dlRes.exceptionOrNull()?.message}"
-                                            injectLogs.add("! [Lỗi] $err")
-                                            injectLogs.add("")
-                                            injectLogs.add("=======================================================")
-                                            injectLogs.add("!                CÀI ĐẶT THẤT BẠI! ❌                 *")
-                                            injectLogs.add("!  $err")
-                                            injectLogs.add("=======================================================")
+                                            injectLogs.add("- $err")
                                             flashFailedReason = err
                                             flashingStatus = FlashingStatus.FAILED
                                             return@launch
                                         }
                                         themeDir = dlRes.getOrThrow()
-                                        injectLogs.add("* [Tải về] Đã tải và giải nén theme thành công!")
-                                        injectLogs.add("")
-                                    } else {
-                                        injectLogs.add("* [Gói dữ liệu] Gói giao diện đã có sẵn trên thiết bị.")
-                                        injectLogs.add("")
+                                        injectLogs.add("- Đã tải và giải nén theme.")
                                     }
 
                                     // Run Root Injection
-                                    injectLogs.add("- [Khởi chạy] Đang nạp theme vào MB Bank với quyền root...")
                                     val res = rootRepository.injectTheme(config, themeDir) { logMsg ->
                                         injectLogs.add(logMsg)
                                     }
@@ -198,20 +188,9 @@ class MainActivity : ComponentActivity() {
                                             originalTheme = currentTargetName,
                                             isPriority = config.usePriorityVariant
                                         )
-                                        injectLogs.add("")
-                                        injectLogs.add("=======================================================")
-                                        injectLogs.add("*             CÀI ĐẶT THEME HOÀN TẤT! 🎉              *")
-                                        injectLogs.add("*       Theme đã được nạp thành công vào MB Bank      *")
-                                        injectLogs.add("*     Bấm nút 'Mở MB Bank' bên dưới để áp dụng        *")
-                                        injectLogs.add("=======================================================")
                                         flashingStatus = FlashingStatus.SUCCESS
                                     } else {
-                                        val err = res.errorMessage ?: "Có lỗi xảy ra trong quá trình nạp theme"
-                                        injectLogs.add("")
-                                        injectLogs.add("=======================================================")
-                                        injectLogs.add("!                CÀI ĐẶT THẤT BẠI! ❌                 *")
-                                        injectLogs.add("!  $err")
-                                        injectLogs.add("=======================================================")
+                                        val err = res.errorMessage ?: "Có lỗi xảy ra trong quá trình cài đặt"
                                         flashFailedReason = err
                                         flashingStatus = FlashingStatus.FAILED
                                     }

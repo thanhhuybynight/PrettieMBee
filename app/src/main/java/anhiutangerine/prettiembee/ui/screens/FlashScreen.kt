@@ -1,6 +1,5 @@
 package anhiutangerine.prettiembee.ui.screens
 
-import android.content.Context
 import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -14,11 +13,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -37,19 +34,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import anhiutangerine.prettiembee.BuildConfig
 import anhiutangerine.prettiembee.data.model.InjectConfig
-import anhiutangerine.prettiembee.ui.theme.DarkBackground
+import anhiutangerine.prettiembee.ui.theme.AppThemeMode
 import anhiutangerine.prettiembee.ui.theme.ErrorRed
-import anhiutangerine.prettiembee.ui.theme.LightBackground
-import anhiutangerine.prettiembee.ui.theme.OledBackground
 import anhiutangerine.prettiembee.ui.theme.SakuraPink
 import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
@@ -69,11 +61,7 @@ object FlashScreenConstants {
 |  _ \ _ __ ___| |_| |_(_) ___|  \/  | __ )  ___  ___  
 | |_) | '__/ _ \ __| __| |/ _ \ |\/| |  _ \ / _ \/ _ \ 
 |  __/| | |  __/ |_| |_| |  __/ |  | | |_) |  __/  __/ 
-|_|   |_|  \___|\__|\__|_|\___|_|  |_|____/ \___|\___| 
-=======================================================
-*             PRETTIEMBEE THEME INSTALLER             *
-*              Inspired by KittiSU Style              *
-======================================================="""
+|_|   |_|  \___|\__|\__|_|\___|_|  |_|____/ \___|\___|"""
 
     fun createInitialLogs(
         config: InjectConfig,
@@ -82,14 +70,11 @@ object FlashScreenConstants {
     ): List<String> {
         val list = mutableListOf<String>()
         ASCII_BANNER.lines().forEach { list.add(it) }
+        list.add("")
         list.add("- Phiên bản: v1.0 (${BuildConfig.GIT_HASH})")
-        list.add("- Nguồn theme: ${config.sourceTheme.name} (${config.sourceTheme.series})")
-        list.add("- Tác giả: ${config.sourceTheme.author}")
+        list.add("- Nguồn theme: ${config.sourceTheme.name}")
         list.add("- Vị trí áp dụng: $currentTargetName")
-        list.add("- Mã định danh UUID: ${config.targetUuid}")
-        list.add("- Chế độ Priority: ${if (config.usePriorityVariant) "BẬT" else "TẮT"}")
-        list.add("- Gói đích MB Bank: $targetPackage")
-        list.add("=======================================================")
+        list.add("- Gói đích: $targetPackage")
         list.add("")
         return list
     }
@@ -109,6 +94,7 @@ fun FlashScreen(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val scrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
 
     // Prevent accidental back navigation while flashing
     BackHandler(enabled = true) {
@@ -132,57 +118,15 @@ fun FlashScreen(
         FlashingStatus.FAILED -> ErrorRed
     }
 
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val accentColor = SakuraPink
+    // Determine font color: white on dark background, black on light background
+    val isDark = when (ThemeConfig.themeMode) {
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.MATERIAL_DARK, AppThemeMode.OLED_DARK -> true
+    }
+    val textColor = if (isDark) Color.White else Color.Black
 
-    val annotatedTerminalText = remember(logs.size, logs.lastOrNull(), status) {
-        buildAnnotatedString {
-            logs.forEachIndexed { index, line ->
-                val isBanner = line.contains("PRETTIEMBEE") ||
-                        line.contains("Inspired by") ||
-                        line.startsWith("===") ||
-                        line.startsWith("|") ||
-                        line.startsWith(" _") ||
-                        line.startsWith("|_")
-                val isSuccess = line.contains("[Thành công]") ||
-                        line.contains("✅") ||
-                        line.startsWith("* ") ||
-                        line.contains("HOÀN TẤT")
-                val isError = line.contains("[Lỗi]") ||
-                        line.contains("❌") ||
-                        line.startsWith("! ") ||
-                        line.contains("THẤT BẠI")
-                val isWarning = line.contains("[Cảnh báo]") || line.contains("⚠️")
-                val isInfo = line.contains("[Chuẩn bị]") ||
-                        line.contains("[Tiến trình]") ||
-                        line.contains("[Hành động]") ||
-                        line.contains("[Thông tin]") ||
-                        line.contains("[Tải về]") ||
-                        line.startsWith("- ")
-
-                val textColor = when {
-                    isError -> ErrorRed
-                    isSuccess -> SuccessGreen
-                    isWarning -> Color(0xFFFFA726)
-                    isBanner -> accentColor
-                    isInfo -> primaryColor
-                    else -> Color(0xFFE2E8F0)
-                }
-
-                val textWeight = when {
-                    isBanner || isSuccess || isError -> FontWeight.Bold
-                    isInfo -> FontWeight.SemiBold
-                    else -> FontWeight.Normal
-                }
-
-                withStyle(SpanStyle(color = textColor, fontWeight = textWeight)) {
-                    append(line)
-                }
-                if (index < logs.size - 1) {
-                    append("\n")
-                }
-            }
-        }
+    val fullLogText = remember(logs.size, logs.lastOrNull()) {
+        logs.joinToString("\n")
     }
 
     Scaffold(
@@ -226,17 +170,15 @@ fun FlashScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            val fullLog = logs.joinToString("\n")
-                            clipboardManager.setText(AnnotatedString(fullLog))
+                            clipboardManager.setText(AnnotatedString(fullLogText))
                             Toast.makeText(context, "Đã sao chép toàn bộ nhật ký cài đặt!", Toast.LENGTH_SHORT).show()
 
-                            // Try saving log file in public Downloads directory
                             try {
                                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                                 if (downloadsDir.exists() && downloadsDir.canWrite()) {
                                     val dateStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                                     val file = File(downloadsDir, "PrettieMBee_install_${dateStr}.log")
-                                    file.writeText(fullLog)
+                                    file.writeText(fullLogText)
                                 }
                             } catch (_: Exception) {}
                         }
@@ -316,73 +258,27 @@ fun FlashScreen(
                 failedReason = failedReason
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Terminal Console
-            Surface(
+            // Log directly on app background (no fake black terminal container)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = Color(0xFF0F1117),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-                tonalElevation = 4.dp
+                    .padding(bottom = 16.dp)
+                    .verticalScroll(scrollState)
+                    .horizontalScroll(horizontalScrollState)
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Terminal Mini Header Bar
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFF161922))
-                            .padding(horizontal = 14.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // 3 Terminal Dots
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFFF5F56)))
-                            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(0xFFFFBD2E)))
-                            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(0xFF27C93F)))
-                        }
-
-                        Text(
-                            text = "terminal - root shell",
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp,
-                            color = Color(0xFF94A3B8),
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        Text(
-                            text = "${logs.size} lines",
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 10.sp,
-                            color = Color(0xFF64748B)
-                        )
-                    }
-
-                    // Terminal Logs View
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .verticalScroll(scrollState)
-                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                    ) {
-                        SelectionContainer {
-                            Text(
-                                text = annotatedTerminalText,
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 11.sp,
-                                lineHeight = 16.sp
-                            )
-                        }
-                    }
+                SelectionContainer {
+                    Text(
+                        text = fullLogText,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 8.8.sp,
+                        lineHeight = 11.5.sp,
+                        color = textColor,
+                        softWrap = false
+                    )
                 }
             }
         }
