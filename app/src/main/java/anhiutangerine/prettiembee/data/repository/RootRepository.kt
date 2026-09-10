@@ -497,17 +497,9 @@ class RootRepository(private val context: Context) {
             log("[Tiến trình] Phục hồi ngữ cảnh SELinux (restorecon)...")
             Shell.cmd("restorecon -R '$flutterDir'").exec()
 
-            log("[Thành công] Nạp theme hoàn tất.")
-
-            // 9. Launch post-actions
-            if (config.autoLaunchDeeplink) {
-                log("[Hành động] Mở trang chi tiết theme trong MB Bank...")
-                val deeplink = "mbbank://installingnew?af_force_deeplink=true&ad_dp=theme_detail&id=${config.targetUuid}"
-                Shell.cmd("am start -a android.intent.action.VIEW -d '$deeplink' $targetPackage").exec()
-            } else if (config.autoLaunchMb) {
-                log("[Hành động] Khởi chạy lại ứng dụng MB Bank...")
-                Shell.cmd("am start -n $targetPackage/io.flutter.plugins.MainActivity").exec()
-            }
+            // 9. Post-actions ready
+            log("[Thông tin] Đã phân quyền và kiểm tra tệp tin hoàn tất.")
+            log("[Thành công] Nạp theme thành công. Sẵn sàng khởi chạy MB Bank.")
 
             return@withContext InjectResult(true, logs)
         } catch (e: Exception) {
@@ -516,4 +508,16 @@ class RootRepository(private val context: Context) {
             return@withContext InjectResult(false, logs, err)
         }
     }
+
+    fun launchMbBank(useDeeplink: Boolean = false, targetUuid: String? = null) {
+        try {
+            if (useDeeplink && !targetUuid.isNullOrBlank()) {
+                val deeplink = "mbbank://installingnew?af_force_deeplink=true&ad_dp=theme_detail&id=$targetUuid"
+                Shell.cmd("am start -a android.intent.action.VIEW -d '$deeplink' $targetPackage").exec()
+            } else {
+                Shell.cmd("am start -n $targetPackage/io.flutter.plugins.MainActivity").exec()
+            }
+        } catch (_: Exception) {}
+    }
 }
+

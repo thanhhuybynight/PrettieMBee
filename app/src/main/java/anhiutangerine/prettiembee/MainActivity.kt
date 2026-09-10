@@ -17,7 +17,9 @@ import anhiutangerine.prettiembee.data.model.InstalledTheme
 import anhiutangerine.prettiembee.data.model.MbStoreTheme
 import anhiutangerine.prettiembee.data.repository.RootRepository
 import anhiutangerine.prettiembee.data.repository.ThemeRepository
-import anhiutangerine.prettiembee.ui.components.InjectDialog
+import anhiutangerine.prettiembee.ui.screens.FlashScreen
+import anhiutangerine.prettiembee.ui.screens.FlashScreenConstants
+import anhiutangerine.prettiembee.ui.screens.FlashingStatus
 import anhiutangerine.prettiembee.ui.components.TargetThemePickerBottomSheet
 import anhiutangerine.prettiembee.ui.screens.HomeScreen
 import anhiutangerine.prettiembee.ui.screens.ThemeDetailSheet
@@ -55,11 +57,13 @@ class MainActivity : ComponentActivity() {
 
                 var isTargetPickerOpen by remember { mutableStateOf(false) }
 
-                // Injection & Download state
-                var isInjecting by remember { mutableStateOf(false) }
-                var isInjectDialogOpen by remember { mutableStateOf(false) }
+                // FlashScreen state
+                var isFlashScreenOpen by remember { mutableStateOf(false) }
+                var activeInstallConfig by remember { mutableStateOf<InjectConfig?>(null) }
+                var activeTargetName by remember { mutableStateOf("") }
+                var flashingStatus by remember { mutableStateOf(FlashingStatus.FLASHING) }
+                var flashFailedReason by remember { mutableStateOf<String?>(null) }
                 val injectLogs = remember { mutableStateListOf<String>() }
-                var injectResult by remember { mutableStateOf<InjectResult?>(null) }
 
                 // Function to refresh state
                 val refreshAll = {
@@ -136,38 +140,57 @@ class MainActivity : ComponentActivity() {
                             onOpenTargetPicker = { isTargetPickerOpen = true },
                             onStartInject = { config ->
                                 selectedThemeForDetail = null
-                                isInjectDialogOpen = true
-                                isInjecting = true
+                                activeInstallConfig = config
+                                activeTargetName = currentTargetName
+                                flashingStatus = FlashingStatus.FLASHING
+                                flashFailedReason = null
                                 injectLogs.clear()
-                                injectResult = null
+
+                                val initialLines = FlashScreenConstants.createInitialLogs(
+                                    config = config,
+                                    currentTargetName = currentTargetName,
+                                    targetPackage = targetPackage
+                                )
+                                injectLogs.addAll(initialLines)
+                                isFlashScreenOpen = true
 
                                 coroutineScope.launch {
                                     // Check if theme files exist locally
                                     var themeDir = themeRepository.getThemeDir(config.sourceTheme.id)
                                     if (!themeRepository.isThemeDownloaded(config.sourceTheme)) {
-                                        injectLogs.add("📥 Theme chưa có sẵn trong máy. Đang tải từ máy chủ...")
+                                        injectLogs.add("- [Tải về] Theme chưa có sẵn trong máy. Đang tải từ máy chủ...")
                                         val dlRes = themeRepository.downloadTheme(config.sourceTheme) { progress ->
-                                            if ((progress * 100).toInt() % 25 == 0) {
-                                                injectLogs.add("⏳ Đang tải: ${(progress * 100).toInt()}%")
+                                            val pct = (progress * 100).toInt()
+                                            if (pct % 25 == 0) {
+                                                injectLogs.add("- [Tải về] Tiến độ: $pct%")
                                             }
                                         }
                                         if (dlRes.isFailure) {
                                             val err = "Tải theme thất bại: ${dlRes.exceptionOrNull()?.message}"
-                                            injectLogs.add("❌ $err")
-                                            injectResult = InjectResult(false, injectLogs, err)
-                                            isInjecting = false
+                                            injectLogs.add("! [Lỗi] $err")
+                                            injectLogs.add("")
+                                            injectLogs.add("=======================================================")
+                                            injectLogs.add("!                CÀI ĐẶT THẤT BẠI! ❌                 *")
+                                            injectLogs.add("!  $err")
+                                            injectLogs.add("=======================================================")
+                                            flashFailedReason = err
+                                            flashingStatus = FlashingStatus.FAILED
                                             return@launch
                                         }
                                         themeDir = dlRes.getOrThrow()
-                                        injectLogs.add("✅ Đã tải và giải nén theme thành công!")
+                                        injectLogs.add("* [Tải về] Đã tải và giải nén theme thành công!")
+                                        injectLogs.add("")
+                                    } else {
+                                        injectLogs.add("* [Gói dữ liệu] Gói giao diện đã có sẵn trên thiết bị.")
+                                        injectLogs.add("")
                                     }
 
                                     // Run Root Injection
+                                    injectLogs.add("- [Khởi chạy] Đang nạp theme vào MB Bank với quyền root...")
                                     val res = rootRepository.injectTheme(config, themeDir) { logMsg ->
                                         injectLogs.add(logMsg)
                                     }
-                                    injectResult = res
-                                    isInjecting = false
+
                                     if (res.isSuccess) {
                                         ThemeConfig.saveAppliedTheme(
                                             context = applicationContext,
@@ -175,6 +198,22 @@ class MainActivity : ComponentActivity() {
                                             originalTheme = currentTargetName,
                                             isPriority = config.usePriorityVariant
                                         )
+                                        injectLogs.add("")
+                                        injectLogs.add("=======================================================")
+                                        injectLogs.add("*             CÀI ĐẶT THEME HOÀN TẤT! 🎉              *")
+                                        injectLogs.add("*       Theme đã được nạp thành công vào MB Bank      *")
+                                        injectLogs.add("*     Bấm nút 'Mở MB Bank' bên dưới để áp dụng        *")
+                                        injectLogs.add("=======================================================")
+                                        flashingStatus = FlashingStatus.SUCCESS
+                                    } else {
+                                        val err = res.errorMessage ?: "Có lỗi xảy ra trong quá trình nạp theme"
+                                        injectLogs.add("")
+                                        injectLogs.add("=======================================================")
+                                        injectLogs.add("!                CÀI ĐẶT THẤT BẠI! ❌                 *")
+                                        injectLogs.add("!  $err")
+                                        injectLogs.add("=======================================================")
+                                        flashFailedReason = err
+                                        flashingStatus = FlashingStatus.FAILED
                                     }
                                     refreshAll()
                                 }
@@ -197,13 +236,22 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Injection Dialog with live logs
-                    if (isInjectDialogOpen) {
-                        InjectDialog(
-                            isRunning = isInjecting,
+                    // KittiSU-style Flash Screen with ASCII banner and terminal log
+                    if (isFlashScreenOpen && activeInstallConfig != null) {
+                        FlashScreen(
+                            config = activeInstallConfig!!,
+                            currentTargetName = activeTargetName,
                             logs = injectLogs,
-                            result = injectResult,
-                            onDismiss = { isInjectDialogOpen = false }
+                            status = flashingStatus,
+                            failedReason = flashFailedReason,
+                            onBack = { isFlashScreenOpen = false },
+                            onLaunchMb = {
+                                rootRepository.launchMbBank(
+                                    useDeeplink = activeInstallConfig?.autoLaunchDeeplink == true,
+                                    targetUuid = activeInstallConfig?.targetUuid
+                                )
+                                isFlashScreenOpen = false
+                            }
                         )
                     }
                 }
