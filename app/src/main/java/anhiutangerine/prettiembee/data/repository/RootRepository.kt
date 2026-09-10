@@ -309,8 +309,18 @@ class RootRepository(private val context: Context) {
                 File(sourceThemeFolder, "token.json")
             }
 
-            if (!sourceImages.exists() || !tokenFile.exists()) {
-                val err = "Thiếu tài nguyên theme tại ${themeDir.absolutePath}"
+            val missing = mutableListOf<String>()
+            if (!sourceImages.isDirectory) missing += "images/"
+            else if (sourceImages.listFiles()?.any { it.isFile } != true) missing += "images/ (rỗng)"
+            if (!tokenFile.isFile) {
+                missing += if (config.usePriorityVariant && !File(sourceThemeFolder, "token_priority.json").exists()) {
+                    "theme/token.json"
+                } else {
+                    "theme/${tokenFile.name}"
+                }
+            }
+            if (missing.isNotEmpty()) {
+                val err = "Thiếu tài nguyên theme tại ${themeDir.absolutePath} (thiếu: ${missing.joinToString()})"
                 log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }

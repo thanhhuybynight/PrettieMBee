@@ -36,10 +36,13 @@ class ThemeRepository(private val context: Context) {
     }
 
     fun isThemeDownloaded(theme: CommunityTheme): Boolean {
-        val themeDir = getThemeDir(theme.id)
-        val tokenFile = File(themeDir, "theme/token.json")
+        return hasValidThemeLayout(getThemeDir(theme.id))
+    }
+
+    private fun hasValidThemeLayout(themeDir: File): Boolean {
+        val tokenFile = File(File(themeDir, "theme"), "token.json")
         val imagesDir = File(themeDir, "images")
-        return tokenFile.exists() && imagesDir.exists() && (imagesDir.listFiles()?.isNotEmpty() == true)
+        return tokenFile.isFile && imagesDir.isDirectory && (imagesDir.listFiles()?.any { it.isFile } == true)
     }
 
     companion object {
@@ -131,6 +134,8 @@ class ThemeRepository(private val context: Context) {
         val downloadUrl = theme.downloadUrl ?: return@withContext Result.failure(Exception("Theme không có link tải trực tiếp"))
         try {
             val destDir = getThemeDir(theme.id)
+            // Wipe any leftover Magisk junk / partial extracts before unpack
+            if (destDir.exists()) destDir.deleteRecursively()
             destDir.mkdirs()
 
             val tempZip = File(context.cacheDir, "${theme.id}_temp.zip")
@@ -186,6 +191,20 @@ class ThemeRepository(private val context: Context) {
             tempZip.delete()
             normalizeExtractedStructure(destDir)
 
+            if (!hasValidThemeLayout(destDir)) {
+                val listing = destDir
+                    .listFiles()
+                    ?.joinToString(limit = 8) { it.name }
+                    .orEmpty()
+                destDir.deleteRecursively()
+                return@withContext Result.failure(
+                    Exception(
+                        "ZIP không đúng cấu trúc (cần images/*.png + theme/token.json)" +
+                            if (listing.isNotBlank()) ". Nội dung sau giải nén: $listing" else ""
+                    )
+                )
+            }
+
             Result.success(destDir)
         } catch (e: Exception) {
             Result.failure(e)
@@ -197,6 +216,7 @@ class ThemeRepository(private val context: Context) {
             val cleanName = rawFileName.removeSuffix(".zip").replace("_", " ").trim()
             val customId = "custom_${System.currentTimeMillis()}"
             val destDir = getThemeDir(customId)
+            if (destDir.exists()) destDir.deleteRecursively()
             destDir.mkdirs()
 
             val tempZip = File(context.cacheDir, "${customId}_import.zip")
@@ -212,10 +232,11 @@ class ThemeRepository(private val context: Context) {
             // Look for nested structures (e.g. if zip has <UUID>/images or theme-id/images)
             normalizeExtractedStructure(destDir)
 
-            val tokenFile = File(destDir, "theme/token.json")
-            if (!tokenFile.exists()) {
+            if (!hasValidThemeLayout(destDir)) {
                 destDir.deleteRecursively()
-                return@withContext Result.failure(Exception("File ZIP không hợp lệ: thiếu file theme/token.json"))
+                return@withContext Result.failure(
+                    Exception("File ZIP không hợp lệ: cần images/*.png và theme/token.json")
+                )
             }
 
             val hasPriority = File(destDir, "theme/token_priority.json").exists()
@@ -244,12 +265,19 @@ class ThemeRepository(private val context: Context) {
         ZipInputStream(zipFile.inputStream().buffered()).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
-                val newFile = File(destDir, entry.name)
+                // Windows-authored zips may use backslashes; Android needs '/'
+                val rawName = entry.name.replace('\\', '/')
+                if (rawName.isBlank() || rawName.startsWith("/") || rawName.contains("..")) {
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                    continue
+                }
+                val newFile = File(destDir, rawName)
                 // Security check against Zip Slip
                 if (!newFile.canonicalPath.startsWith(destDir.canonicalPath + File.separator)) {
                     throw SecurityException("Zip Slip detected: ${entry.name}")
                 }
-                if (entry.isDirectory) {
+                if (rawName.endsWith("/")) {
                     newFile.mkdirs()
                 } else {
                     newFile.parentFile?.mkdirs()
@@ -264,18 +292,45 @@ class ThemeRepository(private val context: Context) {
     }
 
     private fun normalizeExtractedStructure(destDir: File) {
+        unwrapNestedLayout(destDir, depth = 0)
+    }
+
+    private fun unwrapNestedLayout(destDir: File, depth: Int) {
+        if (depth > 3 || hasValidThemeLayout(destDir)) return
+
+        // Unwrap one nested folder: <uuid-or-id>/images + <uuid-or-id>/theme
         val rootFiles = destDir.listFiles() ?: return
-        // If there's a subfolder that contains 'images' or 'theme'
         for (f in rootFiles) {
-            if (f.isDirectory) {
-                val subImages = File(f, "images")
-                val subTheme = File(f, "theme")
-                if (subImages.exists() || subTheme.exists()) {
-                    // Move contents of f up to destDir
-                    subImages.takeIf { it.exists() }?.renameTo(File(destDir, "images"))
-                    subTheme.takeIf { it.exists() }?.renameTo(File(destDir, "theme"))
-                    break
+            if (!f.isDirectory) continue
+            val subImages = File(f, "images")
+            val subTheme = File(f, "theme")
+            if (!subImages.exists() && !subTheme.exists()) continue
+
+            val imagesTarget = File(destDir, "images")
+            val themeTarget = File(destDir, "theme")
+            if (subImages.exists()) {
+                if (imagesTarget.exists()) imagesTarget.deleteRecursively()
+                subImages.renameTo(imagesTarget)
+            }
+            if (subTheme.exists()) {
+                if (themeTarget.exists()) themeTarget.deleteRecursively()
+                subTheme.renameTo(themeTarget)
+            }
+            if (hasValidThemeLayout(destDir)) return
+        }
+
+        // Legacy Magisk: template.bin / *.bin is itself a zip with <uuid>/...
+        for (bin in rootFiles) {
+            if (!bin.isFile || !bin.name.endsWith(".bin")) continue
+            try {
+                unzipFile(bin, destDir)
+                unwrapNestedLayout(destDir, depth + 1)
+                if (hasValidThemeLayout(destDir)) {
+                    bin.delete()
+                    return
                 }
+            } catch (_: Exception) {
+                // not a zip payload; ignore
             }
         }
     }
