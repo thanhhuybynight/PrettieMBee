@@ -9,7 +9,7 @@ class PrettieMBeeApp : Application() {
             Shell.enableVerboseLogging = true
             Shell.setDefaultBuilder(
                 Shell.Builder.create()
-                    .setFlags(Shell.FLAG_REDIRECT_STDERR or Shell.FLAG_MOUNT_MASTER)
+                    .setFlags(Shell.FLAG_MOUNT_MASTER)
                     .setTimeout(25)
             )
         }

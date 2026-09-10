@@ -120,7 +120,7 @@ class RootRepository(private val context: Context) {
         backupDir.mkdirs()
         val res = Shell.cmd(
             "mkdir -p '${backupDir.absolutePath}'",
-            "cp -rf '$themeBase/$targetUuid/'* '${backupDir.absolutePath}/'"
+            "cp -rf '$themeBase/$targetUuid/.' '${backupDir.absolutePath}/'"
         ).exec()
         res.isSuccess
     }
@@ -132,7 +132,7 @@ class RootRepository(private val context: Context) {
 
         val res = Shell.cmd(
             "am force-stop $targetPackage",
-            "cp -rf '${backupDir.absolutePath}/'* '$themeBase/$targetUuid/'",
+            "cp -rf '${backupDir.absolutePath}/.' '$themeBase/$targetUuid/'",
             "restorecon -R '$themeBase/$targetUuid'"
         ).exec()
         res.isSuccess
@@ -227,24 +227,36 @@ class RootRepository(private val context: Context) {
                 return@withContext InjectResult(false, logs, err)
             }
 
+            // Ensure source theme directory is accessible by root
+            Shell.cmd("chmod -R 755 '${themeDir.absolutePath}' 2>/dev/null").exec()
+
             // 5. Target folder
             val themeBase = "$dataDir/app_flutter/app_theme/unzip"
             val targetDir = "$themeBase/${config.targetUuid}"
             log("[Tiến trình] Chuẩn bị thư mục đích: $targetDir")
-            Shell.cmd(
-                "mkdir -p '$targetDir/images'",
-                "mkdir -p '$targetDir/theme'"
+            val prepCmd = Shell.cmd(
+                "mkdir -p '$targetDir'",
+                "rm -rf '$targetDir/images' '$targetDir/theme'"
             ).exec()
+
+            if (!prepCmd.isSuccess) {
+                val prepErr = (prepCmd.err + prepCmd.out).filter { it.isNotBlank() }.joinToString("\n")
+                val err = "Không thể khởi tạo thư mục đích:\n$prepErr"
+                log("[Lỗi] $err")
+                return@withContext InjectResult(false, logs, err)
+            }
 
             // 6. Copy from source to target using root
             log("[Tiến trình] Ghi đè tài nguyên vào thư mục theme của MB Bank...")
             val copyCmd = Shell.cmd(
-                "cp -rf '${sourceImages.absolutePath}/'* '$targetDir/images/'",
+                "cp -rf '${sourceImages.absolutePath}' '$targetDir/'",
+                "mkdir -p '$targetDir/theme'",
                 "cp -f '${tokenFile.absolutePath}' '$targetDir/theme/token.json'"
             ).exec()
 
             if (!copyCmd.isSuccess) {
-                val err = "Lỗi sao chép tập tin: ${copyCmd.err.joinToString("\n")}"
+                val errorDetails = (copyCmd.err + copyCmd.out).filter { it.isNotBlank() }.joinToString("\n")
+                val err = "Lỗi sao chép tập tin (mã lỗi ${copyCmd.code}):\n${errorDetails.ifBlank { "Lệnh sao chép thất bại nhưng không có thông điệp lỗi chi tiết từ shell." }}"
                 log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
@@ -258,8 +270,7 @@ class RootRepository(private val context: Context) {
                 "chmod 755 '$dataDir/app_flutter/app_theme' 2>/dev/null",
                 "chmod 755 '$dataDir/app_flutter/app_theme/unzip' 2>/dev/null",
                 "chmod -R 755 '$targetDir'",
-                "chmod 644 '$targetDir/images/'* 2>/dev/null",
-                "chmod 644 '$targetDir/theme/'* 2>/dev/null"
+                "chmod -R a+r '$targetDir'"
             ).exec()
 
             // 8. Restore SELinux context
