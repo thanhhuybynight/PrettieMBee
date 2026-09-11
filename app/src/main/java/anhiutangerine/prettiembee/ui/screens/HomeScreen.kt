@@ -640,13 +640,13 @@ fun HomeScreen(
                                 ) {
                                     val mbVersion = remember(isMbInstalled, targetPackage) {
                                         if (!isMbInstalled) {
-                                            stringResource(R.string.status_mb_missing)
+                                            context.getString(R.string.status_mb_missing)
                                         } else {
                                             try {
                                                 val pInfo = context.packageManager.getPackageInfo(targetPackage, 0)
-                                                pInfo.versionName ?: stringResource(R.string.status_theme_installed)
+                                                pInfo.versionName ?: context.getString(R.string.status_theme_installed)
                                             } catch (e: Exception) {
-                                                stringResource(R.string.status_theme_installed)
+                                                context.getString(R.string.status_theme_installed)
                                             }
                                         }
                                     }
