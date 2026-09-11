@@ -2,7 +2,6 @@ package anhiutangerine.prettiembee.ui.components
 
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,7 +16,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -121,20 +119,6 @@ fun StatusCard(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_prettiembee_logo),
-                                contentDescription = stringResource(R.string.mascot_desc),
-                                modifier = Modifier.size(40.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = if (isRootGranted && isMbInstalled) {
                                 stringResource(R.string.status_theme_installed)
@@ -152,7 +136,6 @@ fun StatusCard(
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        val prioSuffix = if (appliedIsPriority) " - Prio" else ""
                         Text(
                             text = if (appliedIsPriority) {
                                 stringResource(R.string.status_applied_theme_prio, appliedNewTheme.orEmpty(), appliedOriginalTheme.orEmpty())
@@ -178,27 +161,6 @@ fun StatusCard(
                         .padding(28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(22.dp))
-                            .background(
-                                if (backgroundUri != null)
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-                                else
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_prettiembee_logo),
-                            contentDescription = stringResource(R.string.mascot_desc),
-                            modifier = Modifier.size(54.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     val statusText = when {
                         !isRootGranted -> stringResource(R.string.status_root_missing)
                         !isMbInstalled -> stringResource(R.string.status_mb_missing)
@@ -218,7 +180,6 @@ fun StatusCard(
 
                     if (isThemeInstalled && isRootGranted && isMbInstalled) {
                         Spacer(modifier = Modifier.height(6.dp))
-                        val prioSuffix = if (appliedIsPriority) " - Prio" else ""
                         val subtitleText = if (appliedIsPriority) {
                             stringResource(R.string.status_applied_theme_prio, appliedNewTheme.orEmpty(), appliedOriginalTheme.orEmpty())
                         } else {
