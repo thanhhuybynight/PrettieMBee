@@ -196,6 +196,50 @@
     <string name="error_missing_theme_assets">Missing theme assets at %1$s (missing: %2$s)</string>
     <string name="error_no_uid_gid">Cannot get UID/GID of %1$s. Install MB Bank and open it at least once.</string>
 
+    <!-- Install / inject logs (FlashScreen terminal) -->
+    <string name="log_tag_prepare">[Prepare]</string>
+    <string name="log_tag_info">[Info]</string>
+    <string name="log_tag_progress">[Progress]</string>
+    <string name="log_tag_error">[Error]</string>
+    <string name="log_tag_warning">[Warning]</string>
+    <string name="log_tag_success">[Success]</string>
+    <string name="log_tag_shell">[Shell]</string>
+    <string name="log_tag_shell_prep">[Shell Prep]</string>
+    <string name="log_start_inject">Starting theme inject: %1$s</string>
+    <string name="log_target_app">Target package: %1$s</string>
+    <string name="log_force_stop">Stopping app %1$s…</string>
+    <string name="log_data_dir">Data directory: %1$s</string>
+    <string name="log_check_uid">Checking app identity (UID/GID)…</string>
+    <string name="log_uid_gid">App UID/GID: %1$s</string>
+    <string name="log_apply_priority">Applying Priority token config…</string>
+    <string name="log_images_empty">images/ (empty)</string>
+    <string name="log_prep_target">Preparing target directory: %1$s</string>
+    <string name="log_error_prefix">Error: %1$s</string>
+    <string name="log_mkdir_failed">Cannot create target directory:\n%1$s</string>
+    <string name="log_mkdir_blank">mkdir could not create the directory at %1$s</string>
+    <string name="log_copy_assets">Writing assets into MB Bank theme directory…</string>
+    <string name="log_src_images">Image source: %1$s</string>
+    <string name="log_src_token">Token source: %1$s</string>
+    <string name="log_fallback_images">[FALLBACK_SHELL] Image cp failed, trying tar pipeline…</string>
+    <string name="log_fallback_token">[FALLBACK_SHELL] Token cp failed, trying cat…</string>
+    <string name="log_copy_ok">Copied %1$d images and token.json.</string>
+    <string name="log_copy_fallback">Shell copy incomplete (images: %1$d, token: %2$b). Switching to Direct Tar Stream…</string>
+    <string name="log_stream_ok">Installed %1$d images and token.json via Direct Tar Stream.</string>
+    <string name="log_copy_failed">Failed to copy files into MB Bank (exit code %1$d):\n%2$s</string>
+    <string name="log_copy_failed_blank">Could not copy via shell or stream.</string>
+    <string name="log_chown">Setting ownership (%1$s)…</string>
+    <string name="log_restorecon">Restoring SELinux context (restorecon)…</string>
+    <string name="log_perms_done">Permissions and file checks finished.</string>
+    <string name="log_inject_success">Theme inject finished. Ready to launch MB Bank.</string>
+    <string name="log_exception">Exception: %1$s</string>
+    <string name="log_tar_exit">tar exited with code %1$d: %2$s</string>
+    <string name="log_tar_su_failed">Cannot run tar via su</string>
+    <string name="log_cat_exit">cat exited with code %1$d: %2$s</string>
+    <string name="log_cat_su_failed">Cannot write file via su</string>
+    <string name="log_reset_start">Resetting MB Bank themes…</string>
+    <string name="log_reset_failed">Cannot prepare empty theme directory (exit code %1$d): %2$s</string>
+    <string name="log_reset_mkdir_blank">mkdir could not create %1$s</string>
+
     <!-- Splash / misc -->
     <string name="splash_subtitle">MB Bank custom theme injector</string>
 </resources>

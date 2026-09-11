@@ -224,13 +224,13 @@ class RootRepository(private val context: Context) {
                     return@withContext Result.success(Unit)
                 } else {
                     val err = proc.errorStream.bufferedReader().use { it.readText() }
-                    lastError = Exception("tar kết thúc với mã $exitCode: $err")
+                    lastError = Exception(context.getString(anhiutangerine.prettiembee.R.string.log_tar_exit, exitCode, err))
                 }
             } catch (e: Exception) {
                 lastError = e
             }
         }
-        Result.failure(lastError ?: Exception("Không thể thực thi lệnh tar qua su"))
+        Result.failure(lastError ?: Exception(context.getString(anhiutangerine.prettiembee.R.string.log_tar_su_failed)))
     }
 
     private suspend fun streamFileToTarget(
@@ -256,13 +256,13 @@ class RootRepository(private val context: Context) {
                     return@withContext Result.success(Unit)
                 } else {
                     val err = proc.errorStream.bufferedReader().use { it.readText() }
-                    lastError = Exception("cat kết thúc với mã $exitCode: $err")
+                    lastError = Exception(context.getString(anhiutangerine.prettiembee.R.string.log_cat_exit, exitCode, err))
                 }
             } catch (e: Exception) {
                 lastError = e
             }
         }
-        Result.failure(lastError ?: Exception("Không thể ghi file qua su"))
+        Result.failure(lastError ?: Exception(context.getString(anhiutangerine.prettiembee.R.string.log_cat_su_failed)))
     }
 
     suspend fun injectTheme(
@@ -276,34 +276,35 @@ class RootRepository(private val context: Context) {
             onProgress(msg)
         }
 
+        val r = anhiutangerine.prettiembee.R.string
         try {
-            log("[Chuẩn bị] Bắt đầu nạp theme: ${config.sourceTheme.name}")
-            log("[Thông tin] Ứng dụng mục tiêu: $targetPackage")
+            log("${context.getString(r.log_tag_prepare)} ${context.getString(r.log_start_inject, config.sourceTheme.name)}")
+            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_target_app, targetPackage)}")
 
             // 1. Force stop MB Bank
-            log("[Tiến trình] Dừng ứng dụng $targetPackage...")
+            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_force_stop, targetPackage)}")
             Shell.cmd("am force-stop $targetPackage").exec()
 
             // 2. Resolve Data Directory
             val dataDir = resolveDataDir()
-            log("[Thông tin] Thư mục dữ liệu: $dataDir")
+            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_data_dir, dataDir)}")
 
             // 3. Query UID/GID with multi-tier fallback
-            log("[Tiến trình] Kiểm tra định danh ứng dụng (UID/GID)...")
+            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_check_uid)}")
             val uidGid = resolveUidGid(dataDir)
 
             if (uidGid.isNullOrBlank() || !uidGid.contains(":")) {
-                val err = context.getString(anhiutangerine.prettiembee.R.string.error_no_uid_gid, targetPackage)
-                log("[Lỗi] $err")
+                val err = context.getString(r.error_no_uid_gid, targetPackage)
+                log("${context.getString(r.log_tag_error)} $err")
                 return@withContext InjectResult(false, logs, err)
             }
-            log("[Thông tin] UID/GID ứng dụng: $uidGid")
+            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_uid_gid, uidGid)}")
 
             // 4. Verify source theme assets on disk
             val sourceImages = File(themeDir, "images")
             val sourceThemeFolder = File(themeDir, "theme")
             val tokenFile = if (config.usePriorityVariant && File(sourceThemeFolder, "token_priority.json").exists()) {
-                log("[Tiến trình] Áp dụng cấu hình Priority Tokens...")
+                log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_apply_priority)}")
                 File(sourceThemeFolder, "token_priority.json")
             } else {
                 File(sourceThemeFolder, "token.json")
@@ -311,7 +312,7 @@ class RootRepository(private val context: Context) {
 
             val missing = mutableListOf<String>()
             if (!sourceImages.isDirectory) missing += "images/"
-            else if (sourceImages.listFiles()?.any { it.isFile } != true) missing += "images/ (rỗng)"
+            else if (sourceImages.listFiles()?.any { it.isFile } != true) missing += context.getString(r.log_images_empty)
             if (!tokenFile.isFile) {
                 missing += if (config.usePriorityVariant && !File(sourceThemeFolder, "token_priority.json").exists()) {
                     "theme/token.json"
@@ -320,8 +321,8 @@ class RootRepository(private val context: Context) {
                 }
             }
             if (missing.isNotEmpty()) {
-                val err = context.getString(anhiutangerine.prettiembee.R.string.error_missing_theme_assets, themeDir.absolutePath, missing.joinToString())
-                log("[Lỗi] $err")
+                val err = context.getString(r.error_missing_theme_assets, themeDir.absolutePath, missing.joinToString())
+                log("${context.getString(r.log_tag_error)} $err")
                 return@withContext InjectResult(false, logs, err)
             }
 
@@ -336,7 +337,7 @@ class RootRepository(private val context: Context) {
             // 5. Target folder
             val themeBase = "$dataDir/app_flutter/app_theme/unzip"
             val targetDir = "$themeBase/${config.targetUuid}"
-            log("[Tiến trình] Chuẩn bị thư mục đích: $targetDir")
+            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_prep_target, targetDir)}")
             val prepCmd = Shell.cmd(
                 "mkdir -p '$targetDir'",
                 "rm -rf '$targetDir/images' '$targetDir/theme'",
@@ -345,7 +346,7 @@ class RootRepository(private val context: Context) {
             ).exec()
             val prepOutput = (prepCmd.out + prepCmd.err).filter { it.isNotBlank() }.joinToString("\n")
             if (prepOutput.isNotBlank()) {
-                log("[Shell Prep] $prepOutput")
+                log("${context.getString(r.log_tag_shell_prep)} $prepOutput")
             }
 
             // Verify target directory exists
@@ -353,28 +354,31 @@ class RootRepository(private val context: Context) {
             val targetExists = testTarget.out.firstOrNull()?.trim() == "1"
 
             if (!targetExists) {
-                val err = "Không thể khởi tạo thư mục đích:\n${prepOutput.ifBlank { "Lệnh mkdir không thể tạo thư mục tại $targetDir" }}"
-                log("[Lỗi] $err")
+                val err = context.getString(
+                    r.log_mkdir_failed,
+                    prepOutput.ifBlank { context.getString(r.log_mkdir_blank, targetDir) }
+                )
+                log("${context.getString(r.log_tag_error)} $err")
                 return@withContext InjectResult(false, logs, err)
             }
 
             // 6. Copy from source to target using root with fallback stream
-            log("[Tiến trình] Ghi đè tài nguyên vào thư mục theme của MB Bank...")
+            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_copy_assets)}")
             val resolvedImages = resolveAppPath(sourceImages)
             val resolvedToken = resolveAppPath(tokenFile)
-            log("[Thông tin] Nguồn ảnh: $resolvedImages")
-            log("[Thông tin] Nguồn token: $resolvedToken")
+            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_src_images, resolvedImages)}")
+            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_src_token, resolvedToken)}")
 
             var copySucceeded = false
             val copyScript = """
                 mkdir -p '$targetDir/images'
                 mkdir -p '$targetDir/theme'
                 if ! cp -rf '$resolvedImages/.' '$targetDir/images/'; then
-                    echo "[FALLBACK_SHELL] Lệnh cp ảnh thất bại, thử dùng pipeline tar..."
+                    echo "${context.getString(r.log_fallback_images)}"
                     (cd '$resolvedImages' && tar -cf - .) | (cd '$targetDir/images' && tar -xf -)
                 fi
                 if ! cp -f '$resolvedToken' '$targetDir/theme/token.json'; then
-                    echo "[FALLBACK_SHELL] Lệnh cp token thất bại, thử dùng cat..."
+                    echo "${context.getString(r.log_fallback_token)}"
                     cat '$resolvedToken' > '$targetDir/theme/token.json'
                 fi
             """.trimIndent()
@@ -382,7 +386,7 @@ class RootRepository(private val context: Context) {
             val copyCmd = Shell.cmd(copyScript).exec()
             val copyOutput = (copyCmd.out + copyCmd.err).filter { it.isNotBlank() }.joinToString("\n")
             if (copyOutput.isNotBlank()) {
-                log("[Shell] $copyOutput")
+                log("${context.getString(r.log_tag_shell)} $copyOutput")
             }
 
             // Check if files actually arrived in targetDir
@@ -393,9 +397,9 @@ class RootRepository(private val context: Context) {
 
             if (copyCmd.isSuccess && imgCount > 0 && hasToken) {
                 copySucceeded = true
-                log("[Thông tin] Đã sao chép thành công $imgCount hình ảnh và token.json.")
+                log("${context.getString(r.log_tag_info)} ${context.getString(r.log_copy_ok, imgCount)}")
             } else {
-                log("[Cảnh báo] Lớp sao chép file từ shell chưa hoàn tất (Ảnh: $imgCount, Token: $hasToken). Đang chuyển sang cơ chế nạp trực tiếp qua dòng dữ liệu (Direct Tar Stream)...")
+                log("${context.getString(r.log_tag_warning)} ${context.getString(r.log_copy_fallback, imgCount, hasToken)}")
                 val streamTarRes = streamTarToTarget(sourceImages, "$targetDir/images")
                 val streamTokenRes = streamFileToTarget(tokenFile, "$targetDir/theme/token.json")
 
@@ -404,7 +408,7 @@ class RootRepository(private val context: Context) {
                     val recheckToken = Shell.cmd("test -f '$targetDir/theme/token.json' && echo 1 || echo 0").exec().out.firstOrNull()?.trim() == "1"
                     if (recheckCount > 0 && recheckToken) {
                         copySucceeded = true
-                        log("[Thành công] Đã nạp thành công $recheckCount hình ảnh và token.json qua Direct Tar Stream!")
+                        log("${context.getString(r.log_tag_success)} ${context.getString(r.log_stream_ok, recheckCount)}")
                     }
                 }
 
@@ -414,14 +418,18 @@ class RootRepository(private val context: Context) {
                         streamTarRes.exceptionOrNull()?.message,
                         streamTokenRes.exceptionOrNull()?.message
                     ).joinToString("\n")
-                    val err = "Lỗi sao chép tập tin vào MB Bank (mã lỗi ${copyCmd.code}):\n${errDetails.ifBlank { "Không thể sao chép qua shell lẫn dòng dữ liệu stream." }}"
-                    log("[Lỗi] $err")
+                    val err = context.getString(
+                        r.log_copy_failed,
+                        copyCmd.code,
+                        errDetails.ifBlank { context.getString(r.log_copy_failed_blank) }
+                    )
+                    log("${context.getString(r.log_tag_error)} $err")
                     return@withContext InjectResult(false, logs, err)
                 }
             }
 
             // 7. Fix permissions and ownership recursively for Flutter themes
-            log("[Tiến trình] Phân quyền hạn và chủ sở hữu ($uidGid)...")
+            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_chown, uidGid)}")
             val flutterDir = "$dataDir/app_flutter"
             Shell.cmd(
                 "chown -R $uidGid '$flutterDir'",
@@ -433,17 +441,17 @@ class RootRepository(private val context: Context) {
             ).exec()
 
             // 8. Restore SELinux context
-            log("[Tiến trình] Phục hồi ngữ cảnh SELinux (restorecon)...")
+            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_restorecon)}")
             Shell.cmd("restorecon -R '$flutterDir'").exec()
 
             // 9. Post-actions ready
-            log("[Thông tin] Đã phân quyền và kiểm tra tệp tin hoàn tất.")
-            log("[Thành công] Nạp theme thành công. Sẵn sàng khởi chạy MB Bank.")
+            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_perms_done)}")
+            log("${context.getString(r.log_tag_success)} ${context.getString(r.log_inject_success)}")
 
             return@withContext InjectResult(true, logs)
         } catch (e: Exception) {
-            val err = "Ngoại lệ: ${e.message}"
-            log("[Lỗi] $err")
+            val err = context.getString(r.log_exception, e.message ?: "")
+            log("${context.getString(r.log_tag_error)} $err")
             return@withContext InjectResult(false, logs, err)
         }
     }
@@ -538,7 +546,15 @@ class RootRepository(private val context: Context) {
             if (!targetExists) {
                 val errDetails = (res.out + res.err).filter { it.isNotBlank() }.joinToString("\n")
                 return@withContext Result.failure(
-                    Exception("Không thể khởi tạo thư mục rỗng cho theme (mã lỗi ${res.code}): ${errDetails.ifBlank { "Lệnh mkdir không thể tạo $unzipDir" }}")
+                    Exception(
+                        context.getString(
+                            anhiutangerine.prettiembee.R.string.log_reset_failed,
+                            res.code,
+                            errDetails.ifBlank {
+                                context.getString(anhiutangerine.prettiembee.R.string.log_reset_mkdir_blank, unzipDir)
+                            }
+                        )
+                    )
                 )
             }
 
