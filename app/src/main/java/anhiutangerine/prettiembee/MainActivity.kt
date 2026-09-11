@@ -171,7 +171,8 @@ class MainActivity : ComponentActivity() {
                                 rootRepository.resetAllThemes()
                             },
                             onLanguageChange = { tag ->
-                                ThemeConfig.saveAppLanguage(applicationContext, tag)
+                                // this = MainActivity (not applicationContext) so recreate() runs
+                                ThemeConfig.saveAppLanguage(this@MainActivity, tag)
                             }
                         )
                     }

@@ -202,11 +202,31 @@ object ThemeConfig {
 
     fun saveAppLanguage(context: Context, languageTag: String) {
         appLanguageTag = languageTag
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
             .putString(KEY_APP_LANGUAGE, languageTag)
             .apply()
         Locale.setDefault(Locale(languageTag))
-        (context as? Activity)?.recreate()
+
+        // Prefer the Activity so recreate() rebuilds UI with the new locale.
+        // applicationContext is never an Activity — unwrap if needed.
+        val activity = when (context) {
+            is Activity -> context
+            is android.content.ContextWrapper -> {
+                var base: Context? = context
+                var found: Activity? = null
+                while (base is android.content.ContextWrapper) {
+                    if (base is Activity) {
+                        found = base
+                        break
+                    }
+                    base = base.baseContext
+                }
+                found
+            }
+            else -> null
+        }
+        activity?.recreate()
     }
 
     /** Wrap a base Context so resources resolve in the saved language. */
