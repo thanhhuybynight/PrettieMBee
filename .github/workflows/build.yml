@@ -2,10 +2,9 @@ name: Build PrettieMBee APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
     tags: [ "v*" ]
   pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -31,7 +30,7 @@ jobs:
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: PrettieMBee-debug
+        name: PrettieMBee-debug-${{ github.ref_name }}
         path: app/build/outputs/apk/debug/*.apk
 
     - name: Create GitHub Release on Tag
@@ -41,3 +40,4 @@ jobs:
         files: app/build/outputs/apk/debug/*.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
