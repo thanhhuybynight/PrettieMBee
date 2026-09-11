@@ -167,7 +167,7 @@ fun ThemeDetailSheet(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "UUID: $currentTargetUuid",
+                                text = stringResource(R.string.picker_uuid_label, currentTargetUuid),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )

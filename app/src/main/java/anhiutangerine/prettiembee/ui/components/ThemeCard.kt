@@ -114,12 +114,12 @@ fun ThemeCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.PushPin,
-                                    contentDescription = stringResource(R.string.store_pinned),
+                                    contentDescription = stringResource(R.string.store_pinned_badge),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(10.dp)
                                 )
                                 Text(
-                                    text = stringResource(R.string.store_pinned),
+                                    text = stringResource(R.string.store_pinned_badge),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.SemiBold,

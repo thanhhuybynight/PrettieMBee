@@ -18,6 +18,7 @@
 
     <string name="action_save">Lưu</string>
     <string name="action_cancel">Huỷ</string>
+    <string name="action_close">Đóng</string>
     <string name="action_reset">Đặt lại</string>
     <string name="action_delete">Xoá</string>
     <string name="action_refresh">Làm mới</string>
@@ -25,6 +26,8 @@
     <string name="action_choose_image">Chọn ảnh</string>
     <string name="action_change">Đổi</string>
     <string name="action_remove">Gỡ</string>
+    <string name="action_reset_themes">Xoá và khôi phục</string>
+    <string name="operation_failed">Thao tác thất bại</string>
     <string name="error_generic">Lỗi: %1$s</string>
     <string name="default_package_hint">Mặc định là \'com.mbmobile\'. Nếu bạn dùng ứng dụng kép (Dual App) hoặc bản Clone, hãy nhập package tương ứng:</string>
 
@@ -56,6 +59,10 @@
     <string name="dpi_system_default">Mặc định (Theo hệ thống)</string>
     <string name="dpi_value">Mặc định (Theo hệ thống)</string>
     <string name="dpi_value_named">%1$d DPI</string>
+    <string name="dpi_preset_small">Nhỏ (320 DPI)</string>
+    <string name="dpi_preset_default">Chuẩn (380 DPI)</string>
+    <string name="dpi_preset_medium">Vừa (420 DPI)</string>
+    <string name="dpi_preset_large">Lớn (480 DPI)</string>
 
     <string name="reset_dialog_title">Khôi phục theme mặc định?</string>
     <string name="reset_dialog_message">Thao tác này sẽ đóng ứng dụng MB Bank và xoá sạch toàn bộ các theme tuỳ chỉnh đã cài đặt, đưa giao diện MB Bank về mặc định ban đầu của ngân hàng.</string>
@@ -77,6 +84,7 @@
     <string name="store_load_zip">Nạp ZIP</string>
     <string name="store_downloaded">Đã tải</string>
     <string name="store_pinned">Ghim</string>
+    <string name="store_pinned_badge">Đã ghim</string>
     <string name="store_pin">Ghim</string>
     <string name="store_unpin">Bỏ ghim</string>
     <string name="store_pin_top">Ghim lên đầu</string>
@@ -137,6 +145,10 @@
     <string name="picker_search_hint">Tìm theo tên hoặc UUID…</string>
     <string name="picker_installed_count">%1$d đã cài</string>
     <string name="picker_store_count">%1$d khả dụng</string>
+    <string name="picker_empty_installed">Chưa phát hiện theme nào đã tải trong máy.\nHãy chuyển sang tab \'Kho MB Store\'!</string>
+    <string name="picker_available_images">Có sẵn (%1$d ảnh)</string>
+    <string name="picker_theme_fallback">Theme (%1$s…)</string>
+    <string name="picker_uuid_label">UUID: %1$s</string>
 
     <string name="flash_back">Quay lại</string>
     <string name="flash_install_log">Nhật ký cài đặt</string>
@@ -145,6 +157,7 @@
     <string name="flash_open_mb">Mở MB Bank</string>
     <string name="flash_copy_log">Sao chép log</string>
     <string name="flash_failed_title">Cài đặt thất bại</string>
+    <string name="flash_failed_short">Lỗi</string>
     <string name="flash_retry">Thử lại</string>
     <string name="flash_copied">Đã sao chép log</string>
     <string name="flash_in_progress">Đang áp dụng theme…</string>
@@ -152,6 +165,9 @@
     <string name="flash_log_source">Nguồn theme: %1$s</string>
     <string name="flash_log_target">Vị trí áp dụng: %1$s</string>
     <string name="flash_log_package">Gói đích: %1$s</string>
+    <string name="flash_log_downloading">Đang tải theme từ máy chủ…</string>
+    <string name="flash_log_progress">Tiến độ tải: %1$d%%</string>
+    <string name="flash_log_downloaded">Đã tải và giải nén theme.</string>
 
     <string name="error_no_download_url">Theme không có link tải trực tiếp</string>
     <string name="error_cannot_connect">Không thể kết nối đến máy chủ</string>

@@ -148,7 +148,7 @@ fun TargetThemePickerBottomSheet(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Rounded.Search,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(R.string.store_search),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         modifier = Modifier.size(20.dp)
                     )
@@ -187,7 +187,7 @@ fun TargetThemePickerBottomSheet(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "Chưa phát hiện theme nào đã tải trong máy.\nHãy chuyển sang tab 'Kho MB Store'!",
+                                    text = stringResource(R.string.picker_empty_installed),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
@@ -195,12 +195,13 @@ fun TargetThemePickerBottomSheet(
                         }
                     } else {
                         items(filteredInstalled) { installed ->
-                            val displayName = installed.storeTheme?.displayName ?: "Theme (${installed.uuid.take(8)}...)"
+                            val displayName = installed.storeTheme?.displayName
+                                ?: stringResource(R.string.picker_theme_fallback, installed.uuid.take(8))
                             TargetItem(
                                 title = displayName,
-                                subtitle = "UUID: ${installed.uuid}",
+                                subtitle = stringResource(R.string.picker_uuid_label, installed.uuid),
                                 isSelected = installed.uuid.equals(selectedUuid, ignoreCase = true),
-                                badgeText = "Có sẵn (${installed.imageCount} ảnh)",
+                                badgeText = stringResource(R.string.picker_available_images, installed.imageCount),
                                 badgeColor = SuccessGreen,
                                 onClick = {
                                     onSelectTarget(installed.uuid, displayName)
@@ -220,9 +221,9 @@ fun TargetThemePickerBottomSheet(
                         val isInstalledOnDevice = installedThemes.any { it.uuid.equals(store.uuid, ignoreCase = true) }
                         TargetItem(
                             title = store.displayName,
-                            subtitle = "UUID: ${store.uuid}",
+                            subtitle = stringResource(R.string.picker_uuid_label, store.uuid),
                             isSelected = store.uuid.equals(selectedUuid, ignoreCase = true),
-                            badgeText = if (isInstalledOnDevice) "Đã tải" else "MB Store",
+                            badgeText = if (isInstalledOnDevice) stringResource(R.string.store_downloaded) else stringResource(R.string.nav_store),
                             badgeColor = if (isInstalledOnDevice) SuccessGreen else SakuraPink,
                             onClick = {
                                 onSelectTarget(store.uuid, store.displayName)
@@ -310,7 +311,7 @@ private fun TargetItem(
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Rounded.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(R.string.action_apply),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )

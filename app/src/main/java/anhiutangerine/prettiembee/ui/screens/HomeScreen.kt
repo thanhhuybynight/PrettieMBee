@@ -347,7 +347,7 @@ fun HomeScreen(
                     onClick = { showThemeModeDialog = false },
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Đóng")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -377,10 +377,10 @@ fun HomeScreen(
 
                     val presets = listOf(
                         0 to stringResource(R.string.dpi_value),
-                        320 to "Nhỏ (320 DPI)",
-                        380 to "Chuẩn (380 DPI)",
-                        420 to "Vừa (420 DPI)",
-                        480 to "Lớn (480 DPI)"
+                        320 to stringResource(R.string.dpi_preset_small),
+                        380 to stringResource(R.string.dpi_preset_default),
+                        420 to stringResource(R.string.dpi_preset_medium),
+                        480 to stringResource(R.string.dpi_preset_large)
                     )
 
                     presets.forEach { (presetDpi, label) ->
@@ -423,7 +423,7 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
                         )
                         Text(
-                            text = if (tempDpiInput <= 0) "Mặc định" else "$tempDpiInput DPI",
+                            text = if (tempDpiInput <= 0) stringResource(R.string.dpi_value) else stringResource(R.string.dpi_value_named, tempDpiInput),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -448,7 +448,7 @@ fun HomeScreen(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text("Áp dụng", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.action_apply), fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -498,8 +498,8 @@ fun HomeScreen(
                                     Toast.makeText(context, context.getString(R.string.reset_success), Toast.LENGTH_LONG).show()
                                     onRefreshStatus()
                                 } else {
-                                    val err = res.exceptionOrNull()?.message ?: "Thao tác thất bại"
-                                    Toast.makeText(context, "Lỗi: $err", Toast.LENGTH_LONG).show()
+                                    val err = res.exceptionOrNull()?.message ?: context.getString(R.string.operation_failed)
+                                    Toast.makeText(context, context.getString(R.string.error_generic, err), Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
@@ -519,7 +519,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Text("Xoá và khôi phục", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.action_reset_themes), fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -554,7 +554,7 @@ fun HomeScreen(
                                 Box(contentAlignment = Alignment.Center) {
                                     Image(
                                         painter = painterResource(id = R.drawable.ic_prettiembee_logo),
-                                        contentDescription = "Logo",
+                                        contentDescription = stringResource(R.string.home_title),
                                         modifier = Modifier.size(22.dp)
                                     )
                                 }
@@ -585,7 +585,7 @@ fun HomeScreen(
                     IconButton(onClick = onRefreshStatus) {
                         Icon(
                             imageVector = Icons.Rounded.Refresh,
-                            contentDescription = "Refresh",
+                            contentDescription = stringResource(R.string.action_refresh),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -640,13 +640,13 @@ fun HomeScreen(
                                 ) {
                                     val mbVersion = remember(isMbInstalled, targetPackage) {
                                         if (!isMbInstalled) {
-                                            "Chưa cài đặt"
+                                            stringResource(R.string.status_mb_missing)
                                         } else {
                                             try {
                                                 val pInfo = context.packageManager.getPackageInfo(targetPackage, 0)
-                                                pInfo.versionName ?: "Đã cài đặt"
+                                                pInfo.versionName ?: stringResource(R.string.status_theme_installed)
                                             } catch (e: Exception) {
-                                                "Đã cài đặt"
+                                                stringResource(R.string.status_theme_installed)
                                             }
                                         }
                                     }
@@ -661,7 +661,7 @@ fun HomeScreen(
 
                                     SegmentedItem(
                                         title = stringResource(R.string.home_android_version),
-                                        subtitle = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+                                        subtitle = stringResource(R.string.home_android_version_value, Build.VERSION.RELEASE, Build.VERSION.SDK_INT),
                                         icon = Icons.Rounded.Android,
                                         iconTint = MaterialTheme.colorScheme.primary,
                                         showDivider = true
@@ -718,7 +718,7 @@ fun HomeScreen(
                                     leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Rounded.Search,
-                                            contentDescription = "Search",
+                                            contentDescription = stringResource(R.string.store_search),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -728,7 +728,7 @@ fun HomeScreen(
                                             IconButton(onClick = { searchQuery = "" }) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.Close,
-                                                    contentDescription = "Clear",
+                                                    contentDescription = stringResource(R.string.store_clear),
                                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                                     modifier = Modifier.size(18.dp)
                                                 )
@@ -873,7 +873,7 @@ fun HomeScreen(
                                         trailingContent = {
                                             Icon(
                                                 imageVector = Icons.Rounded.Edit,
-                                                contentDescription = "Edit Package",
+                                                contentDescription = stringResource(R.string.settings_target_package),
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -924,7 +924,7 @@ fun HomeScreen(
                                         trailingContent = {
                                             Icon(
                                                 imageVector = Icons.Rounded.ChevronRight,
-                                                contentDescription = "Select Mode",
+                                                contentDescription = stringResource(R.string.settings_theme_mode),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                             )
                                         },
@@ -958,7 +958,7 @@ fun HomeScreen(
                                                         if (isSelected) {
                                                             Icon(
                                                                 imageVector = Icons.Rounded.Check,
-                                                                contentDescription = "Selected",
+                                                                contentDescription = stringResource(R.string.action_apply),
                                                                 tint = Color.White,
                                                                 modifier = Modifier.size(14.dp)
                                                             )
@@ -1019,7 +1019,7 @@ fun HomeScreen(
                                                     ) {
                                                         Icon(
                                                             imageVector = Icons.Rounded.Delete,
-                                                            contentDescription = "Xoá nền thẻ",
+                                                            contentDescription = stringResource(R.string.action_delete),
                                                             tint = MaterialTheme.colorScheme.error,
                                                             modifier = Modifier.size(18.dp)
                                                         )
@@ -1033,7 +1033,7 @@ fun HomeScreen(
                                     // 5. Nền toàn ứng dụng (Full screen app background)
                                     SegmentedItem(
                                         title = stringResource(R.string.settings_app_bg),
-                                        subtitle = if (ThemeConfig.appBackgroundUri != null) stringResource(R.string.settings_app_bg_set) else stringResource(R.string.settings_status_card_bg_none),
+                                        subtitle = if (ThemeConfig.appBackgroundUri != null) stringResource(R.string.settings_app_bg_set) else stringResource(R.string.settings_app_bg_none),
                                         icon = Icons.Rounded.Wallpaper,
                                         iconTint = MaterialTheme.colorScheme.primary,
                                         trailingContent = {
@@ -1061,7 +1061,7 @@ fun HomeScreen(
                                                     ) {
                                                         Icon(
                                                             imageVector = Icons.Rounded.Delete,
-                                                            contentDescription = "Xoá nền app",
+                                                            contentDescription = stringResource(R.string.action_delete),
                                                             tint = MaterialTheme.colorScheme.error,
                                                             modifier = Modifier.size(18.dp)
                                                         )
@@ -1209,7 +1209,7 @@ fun HomeScreen(
                                         trailingContent = {
                                             Icon(
                                                 imageVector = Icons.Rounded.ChevronRight,
-                                                contentDescription = "Chỉnh DPI",
+                                                contentDescription = stringResource(R.string.settings_app_dpi),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                             )
                                         },

@@ -21,6 +21,7 @@
     <!-- Common -->
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
     <string name="action_reset">Reset</string>
     <string name="action_delete">Delete</string>
     <string name="action_refresh">Refresh</string>
@@ -28,6 +29,8 @@
     <string name="action_choose_image">Choose image</string>
     <string name="action_change">Change</string>
     <string name="action_remove">Remove</string>
+    <string name="action_reset_themes">Clear &amp; restore</string>
+    <string name="operation_failed">Action failed</string>
     <string name="error_generic">Error: %1$s</string>
     <string name="default_package_hint">Default is \'com.mbmobile\'. If you use Dual App or a clone, enter its package name:</string>
 
@@ -64,6 +67,10 @@
     <string name="dpi_system_default">System default</string>
     <string name="dpi_value">System default</string>
     <string name="dpi_value_named">%1$d DPI</string>
+    <string name="dpi_preset_small">Small (320 DPI)</string>
+    <string name="dpi_preset_default">Standard (380 DPI)</string>
+    <string name="dpi_preset_medium">Medium (420 DPI)</string>
+    <string name="dpi_preset_large">Large (480 DPI)</string>
 
     <!-- Reset dialog -->
     <string name="reset_dialog_title">Restore default theme?</string>
@@ -88,6 +95,7 @@
     <string name="store_load_zip">Import ZIP</string>
     <string name="store_downloaded">Downloaded</string>
     <string name="store_pinned">Pinned</string>
+    <string name="store_pinned_badge">Pinned</string>
     <string name="store_pin">Pin</string>
     <string name="store_unpin">Unpin</string>
     <string name="store_pin_top">Pin to top</string>
@@ -151,6 +159,10 @@
     <string name="picker_search_hint">Search by name or UUID…</string>
     <string name="picker_installed_count">%1$d installed</string>
     <string name="picker_store_count">%1$d available</string>
+    <string name="picker_empty_installed">No installed themes found on this device.\nSwitch to the MB Store tab.</string>
+    <string name="picker_available_images">Ready (%1$d images)</string>
+    <string name="picker_theme_fallback">Theme (%1$s…)</string>
+    <string name="picker_uuid_label">UUID: %1$s</string>
 
     <!-- Flash screen -->
     <string name="flash_back">Back</string>
@@ -160,6 +172,7 @@
     <string name="flash_open_mb">Open MB Bank</string>
     <string name="flash_copy_log">Copy log</string>
     <string name="flash_failed_title">Installation failed</string>
+    <string name="flash_failed_short">Error</string>
     <string name="flash_retry">Try again</string>
     <string name="flash_copied">Log copied to clipboard</string>
     <string name="flash_in_progress">Applying theme…</string>
@@ -167,6 +180,9 @@
     <string name="flash_log_source">Theme source: %1$s</string>
     <string name="flash_log_target">Apply to: %1$s</string>
     <string name="flash_log_package">Target package: %1$s</string>
+    <string name="flash_log_downloading">Downloading theme from server…</string>
+    <string name="flash_log_progress">Download progress: %1$d%%</string>
+    <string name="flash_log_downloaded">Theme downloaded and extracted.</string>
 
     <!-- Error messages -->
     <string name="error_no_download_url">This theme has no direct download link</string>

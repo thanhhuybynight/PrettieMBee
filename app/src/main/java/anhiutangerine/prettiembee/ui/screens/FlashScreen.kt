@@ -181,7 +181,7 @@ fun FlashScreen(
                         Column {
                             Text(
                                 text = when (status) {
-                                    FlashingStatus.FLASHING -> context.getString(R.string.flash_in_progress)
+                                    FlashingStatus.FLASHING -> stringResource(R.string.flash_in_progress)
                                     FlashingStatus.SUCCESS -> stringResource(R.string.flash_success_title)
                                     FlashingStatus.FAILED -> stringResource(R.string.flash_failed_title)
                                 },
@@ -207,7 +207,7 @@ fun FlashScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.ArrowBack,
-                                contentDescription = "Quay lại",
+                                contentDescription = stringResource(R.string.flash_back),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -253,12 +253,12 @@ fun FlashScreen(
                             icon = {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
-                                    contentDescription = "Đóng"
+                                    contentDescription = stringResource(R.string.action_close)
                                 )
                             },
                             text = {
                                 Text(
-                                    text = "Đóng",
+                                    text = stringResource(R.string.action_close),
                                     fontWeight = FontWeight.Bold
                                 )
                             },
@@ -359,7 +359,7 @@ private fun FlashProgressBarCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = themeName.ifEmpty { "MB Bank Theme" },
+                    text = themeName.ifEmpty { stringResource(R.string.app_name) },
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -367,8 +367,8 @@ private fun FlashProgressBarCard(
                 Text(
                     text = when (status) {
                         FlashingStatus.FLASHING -> "1/1"
-                        FlashingStatus.SUCCESS -> "Hoàn tất"
-                        FlashingStatus.FAILED -> "Lỗi"
+                        FlashingStatus.SUCCESS -> stringResource(R.string.flash_success_title)
+                        FlashingStatus.FAILED -> stringResource(R.string.flash_failed_short)
                     },
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = progressColor
@@ -414,7 +414,7 @@ private fun FlashProgressBarCard(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Chi tiết lỗi",
+                            text = stringResource(R.string.flash_failed_title),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = ErrorRed
                         )

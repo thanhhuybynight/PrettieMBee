@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
 
                 var selectedThemeForDetail by remember { mutableStateOf<CommunityTheme?>(null) }
                 var currentTargetUuid by remember { mutableStateOf("aa3cb89a-8325-41b4-b59b-dfaea086cf80") }
-                var currentTargetName by remember { mutableStateOf("Cánh Én Mùa Xuân") }
+                var currentTargetName by remember { mutableStateOf("") }
 
                 var isTargetPickerOpen by remember { mutableStateOf(false) }
 
@@ -92,7 +92,8 @@ class MainActivity : ComponentActivity() {
                             // Auto select first installed theme as default target if available
                             installedThemes.firstOrNull()?.let { first ->
                                 currentTargetUuid = first.uuid
-                                currentTargetName = first.storeTheme?.displayName ?: "Theme (${first.uuid.take(8)}...)"
+                                currentTargetName = first.storeTheme?.displayName
+                                    ?: applicationContext.getString(R.string.picker_theme_fallback, first.uuid.take(8))
                             }
                         }
                     }
@@ -203,22 +204,22 @@ class MainActivity : ComponentActivity() {
                                     // Check if theme files exist locally
                                     var themeDir = themeRepository.getThemeDir(config.sourceTheme.id)
                                     if (!themeRepository.isThemeDownloaded(config.sourceTheme)) {
-                                        injectLogs.add("- Đang tải theme từ máy chủ...")
+                                        injectLogs.add(applicationContext.getString(R.string.flash_log_downloading))
                                         val dlRes = themeRepository.downloadTheme(config.sourceTheme) { progress ->
                                             val pct = (progress * 100).toInt()
                                             if (pct % 25 == 0) {
-                                                injectLogs.add("- Tiến độ tải: $pct%")
+                                                injectLogs.add(applicationContext.getString(R.string.flash_log_progress, pct))
                                             }
                                         }
                                         if (dlRes.isFailure) {
-                                            val err = "Tải theme thất bại: ${dlRes.exceptionOrNull()?.message}"
+                                            val err = applicationContext.getString(R.string.error_generic, dlRes.exceptionOrNull()?.message ?: "")
                                             injectLogs.add("- $err")
                                             flashFailedReason = err
                                             flashingStatus = FlashingStatus.FAILED
                                             return@launch
                                         }
                                         themeDir = dlRes.getOrThrow()
-                                        injectLogs.add("- Đã tải và giải nén theme.")
+                                        injectLogs.add(applicationContext.getString(R.string.flash_log_downloaded))
                                     }
 
                                     // Run Root Injection
@@ -241,7 +242,7 @@ class MainActivity : ComponentActivity() {
                                             targetUuid = config.targetUuid
                                         )
                                     } else {
-                                        val err = res.errorMessage ?: "Có lỗi xảy ra trong quá trình cài đặt"
+                                        val err = res.errorMessage ?: applicationContext.getString(R.string.operation_failed)
                                         flashFailedReason = err
                                         flashingStatus = FlashingStatus.FAILED
                                     }
