@@ -353,27 +353,12 @@ private fun FlashProgressBarCard(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = themeName.ifEmpty { stringResource(R.string.app_name) },
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = when (status) {
-                        FlashingStatus.FLASHING -> "1/1"
-                        FlashingStatus.SUCCESS -> stringResource(R.string.flash_success_title)
-                        FlashingStatus.FAILED -> stringResource(R.string.flash_failed_short)
-                    },
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = progressColor
-                )
-            }
+            Text(
+                text = themeName.ifEmpty { stringResource(R.string.app_name) },
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
