@@ -1,6 +1,7 @@
-package anhiutangerine.prettiembee.data.repository
+﻿package anhiutangerine.prettiembee.data.repository
 
 import android.content.Context
+import anhiutangerine.prettiembee.R
 import anhiutangerine.prettiembee.data.model.InjectConfig
 import anhiutangerine.prettiembee.data.model.InjectResult
 import anhiutangerine.prettiembee.data.model.InstalledTheme
@@ -224,13 +225,13 @@ class RootRepository(private val context: Context) {
                     return@withContext Result.success(Unit)
                 } else {
                     val err = proc.errorStream.bufferedReader().use { it.readText() }
-                    lastError = Exception(context.getString(anhiutangerine.prettiembee.R.string.log_tar_exit, exitCode, err))
+                    lastError = Exception(context.getString(R.string.log_tar_exit, exitCode, err))
                 }
             } catch (e: Exception) {
                 lastError = e
             }
         }
-        Result.failure(lastError ?: Exception(context.getString(anhiutangerine.prettiembee.R.string.log_tar_su_failed)))
+        Result.failure(lastError ?: Exception(context.getString(R.string.log_tar_su_failed)))
     }
 
     private suspend fun streamFileToTarget(
@@ -256,13 +257,13 @@ class RootRepository(private val context: Context) {
                     return@withContext Result.success(Unit)
                 } else {
                     val err = proc.errorStream.bufferedReader().use { it.readText() }
-                    lastError = Exception(context.getString(anhiutangerine.prettiembee.R.string.log_cat_exit, exitCode, err))
+                    lastError = Exception(context.getString(R.string.log_cat_exit, exitCode, err))
                 }
             } catch (e: Exception) {
                 lastError = e
             }
         }
-        Result.failure(lastError ?: Exception(context.getString(anhiutangerine.prettiembee.R.string.log_cat_su_failed)))
+        Result.failure(lastError ?: Exception(context.getString(R.string.log_cat_su_failed)))
     }
 
     suspend fun injectTheme(
@@ -276,35 +277,34 @@ class RootRepository(private val context: Context) {
             onProgress(msg)
         }
 
-        val r = anhiutangerine.prettiembee.R.string
         try {
-            log("${context.getString(r.log_tag_prepare)} ${context.getString(r.log_start_inject, config.sourceTheme.name)}")
-            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_target_app, targetPackage)}")
+            log("${context.getString(R.string.log_tag_prepare)} ${context.getString(R.string.log_start_inject, config.sourceTheme.name)}")
+            log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_target_app, targetPackage)}")
 
             // 1. Force stop MB Bank
-            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_force_stop, targetPackage)}")
+            log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_force_stop, targetPackage)}")
             Shell.cmd("am force-stop $targetPackage").exec()
 
             // 2. Resolve Data Directory
             val dataDir = resolveDataDir()
-            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_data_dir, dataDir)}")
+            log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_data_dir, dataDir)}")
 
             // 3. Query UID/GID with multi-tier fallback
-            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_check_uid)}")
+            log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_check_uid)}")
             val uidGid = resolveUidGid(dataDir)
 
             if (uidGid.isNullOrBlank() || !uidGid.contains(":")) {
-                val err = context.getString(r.error_no_uid_gid, targetPackage)
-                log("${context.getString(r.log_tag_error)} $err")
+                val err = context.getString(R.string.error_no_uid_gid, targetPackage)
+                log("${context.getString(R.string.log_tag_error)} $err")
                 return@withContext InjectResult(false, logs, err)
             }
-            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_uid_gid, uidGid)}")
+            log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_uid_gid, uidGid)}")
 
             // 4. Verify source theme assets on disk
             val sourceImages = File(themeDir, "images")
             val sourceThemeFolder = File(themeDir, "theme")
             val tokenFile = if (config.usePriorityVariant && File(sourceThemeFolder, "token_priority.json").exists()) {
-                log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_apply_priority)}")
+                log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_apply_priority)}")
                 File(sourceThemeFolder, "token_priority.json")
             } else {
                 File(sourceThemeFolder, "token.json")
@@ -312,7 +312,7 @@ class RootRepository(private val context: Context) {
 
             val missing = mutableListOf<String>()
             if (!sourceImages.isDirectory) missing += "images/"
-            else if (sourceImages.listFiles()?.any { it.isFile } != true) missing += context.getString(r.log_images_empty)
+            else if (sourceImages.listFiles()?.any { it.isFile } != true) missing += context.getString(R.string.log_images_empty)
             if (!tokenFile.isFile) {
                 missing += if (config.usePriorityVariant && !File(sourceThemeFolder, "token_priority.json").exists()) {
                     "theme/token.json"
@@ -321,8 +321,8 @@ class RootRepository(private val context: Context) {
                 }
             }
             if (missing.isNotEmpty()) {
-                val err = context.getString(r.error_missing_theme_assets, themeDir.absolutePath, missing.joinToString())
-                log("${context.getString(r.log_tag_error)} $err")
+                val err = context.getString(R.string.error_missing_theme_assets, themeDir.absolutePath, missing.joinToString())
+                log("${context.getString(R.string.log_tag_error)} $err")
                 return@withContext InjectResult(false, logs, err)
             }
 
@@ -337,7 +337,7 @@ class RootRepository(private val context: Context) {
             // 5. Target folder
             val themeBase = "$dataDir/app_flutter/app_theme/unzip"
             val targetDir = "$themeBase/${config.targetUuid}"
-            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_prep_target, targetDir)}")
+            log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_prep_target, targetDir)}")
             val prepCmd = Shell.cmd(
                 "mkdir -p '$targetDir'",
                 "rm -rf '$targetDir/images' '$targetDir/theme'",
@@ -346,7 +346,7 @@ class RootRepository(private val context: Context) {
             ).exec()
             val prepOutput = (prepCmd.out + prepCmd.err).filter { it.isNotBlank() }.joinToString("\n")
             if (prepOutput.isNotBlank()) {
-                log("${context.getString(r.log_tag_shell_prep)} $prepOutput")
+                log("${context.getString(R.string.log_tag_shell_prep)} $prepOutput")
             }
 
             // Verify target directory exists
@@ -355,30 +355,30 @@ class RootRepository(private val context: Context) {
 
             if (!targetExists) {
                 val err = context.getString(
-                    r.log_mkdir_failed,
-                    prepOutput.ifBlank { context.getString(r.log_mkdir_blank, targetDir) }
+                    R.string.log_mkdir_failed,
+                    prepOutput.ifBlank { context.getString(R.string.log_mkdir_blank, targetDir) }
                 )
-                log("${context.getString(r.log_tag_error)} $err")
+                log("${context.getString(R.string.log_tag_error)} $err")
                 return@withContext InjectResult(false, logs, err)
             }
 
             // 6. Copy from source to target using root with fallback stream
-            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_copy_assets)}")
+            log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_copy_assets)}")
             val resolvedImages = resolveAppPath(sourceImages)
             val resolvedToken = resolveAppPath(tokenFile)
-            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_src_images, resolvedImages)}")
-            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_src_token, resolvedToken)}")
+            log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_src_images, resolvedImages)}")
+            log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_src_token, resolvedToken)}")
 
             var copySucceeded = false
             val copyScript = """
                 mkdir -p '$targetDir/images'
                 mkdir -p '$targetDir/theme'
                 if ! cp -rf '$resolvedImages/.' '$targetDir/images/'; then
-                    echo "${context.getString(r.log_fallback_images)}"
+                    echo "${context.getString(R.string.log_fallback_images)}"
                     (cd '$resolvedImages' && tar -cf - .) | (cd '$targetDir/images' && tar -xf -)
                 fi
                 if ! cp -f '$resolvedToken' '$targetDir/theme/token.json'; then
-                    echo "${context.getString(r.log_fallback_token)}"
+                    echo "${context.getString(R.string.log_fallback_token)}"
                     cat '$resolvedToken' > '$targetDir/theme/token.json'
                 fi
             """.trimIndent()
@@ -386,7 +386,7 @@ class RootRepository(private val context: Context) {
             val copyCmd = Shell.cmd(copyScript).exec()
             val copyOutput = (copyCmd.out + copyCmd.err).filter { it.isNotBlank() }.joinToString("\n")
             if (copyOutput.isNotBlank()) {
-                log("${context.getString(r.log_tag_shell)} $copyOutput")
+                log("${context.getString(R.string.log_tag_shell)} $copyOutput")
             }
 
             // Check if files actually arrived in targetDir
@@ -397,9 +397,9 @@ class RootRepository(private val context: Context) {
 
             if (copyCmd.isSuccess && imgCount > 0 && hasToken) {
                 copySucceeded = true
-                log("${context.getString(r.log_tag_info)} ${context.getString(r.log_copy_ok, imgCount)}")
+                log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_copy_ok, imgCount)}")
             } else {
-                log("${context.getString(r.log_tag_warning)} ${context.getString(r.log_copy_fallback, imgCount, hasToken)}")
+                log("${context.getString(R.string.log_tag_warning)} ${context.getString(R.string.log_copy_fallback, imgCount, hasToken)}")
                 val streamTarRes = streamTarToTarget(sourceImages, "$targetDir/images")
                 val streamTokenRes = streamFileToTarget(tokenFile, "$targetDir/theme/token.json")
 
@@ -408,7 +408,7 @@ class RootRepository(private val context: Context) {
                     val recheckToken = Shell.cmd("test -f '$targetDir/theme/token.json' && echo 1 || echo 0").exec().out.firstOrNull()?.trim() == "1"
                     if (recheckCount > 0 && recheckToken) {
                         copySucceeded = true
-                        log("${context.getString(r.log_tag_success)} ${context.getString(r.log_stream_ok, recheckCount)}")
+                        log("${context.getString(R.string.log_tag_success)} ${context.getString(R.string.log_stream_ok, recheckCount)}")
                     }
                 }
 
@@ -419,17 +419,17 @@ class RootRepository(private val context: Context) {
                         streamTokenRes.exceptionOrNull()?.message
                     ).joinToString("\n")
                     val err = context.getString(
-                        r.log_copy_failed,
+                        R.string.log_copy_failed,
                         copyCmd.code,
-                        errDetails.ifBlank { context.getString(r.log_copy_failed_blank) }
+                        errDetails.ifBlank { context.getString(R.string.log_copy_failed_blank) }
                     )
-                    log("${context.getString(r.log_tag_error)} $err")
+                    log("${context.getString(R.string.log_tag_error)} $err")
                     return@withContext InjectResult(false, logs, err)
                 }
             }
 
             // 7. Fix permissions and ownership recursively for Flutter themes
-            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_chown, uidGid)}")
+            log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_chown, uidGid)}")
             val flutterDir = "$dataDir/app_flutter"
             Shell.cmd(
                 "chown -R $uidGid '$flutterDir'",
@@ -441,17 +441,17 @@ class RootRepository(private val context: Context) {
             ).exec()
 
             // 8. Restore SELinux context
-            log("${context.getString(r.log_tag_progress)} ${context.getString(r.log_restorecon)}")
+            log("${context.getString(R.string.log_tag_progress)} ${context.getString(R.string.log_restorecon)}")
             Shell.cmd("restorecon -R '$flutterDir'").exec()
 
             // 9. Post-actions ready
-            log("${context.getString(r.log_tag_info)} ${context.getString(r.log_perms_done)}")
-            log("${context.getString(r.log_tag_success)} ${context.getString(r.log_inject_success)}")
+            log("${context.getString(R.string.log_tag_info)} ${context.getString(R.string.log_perms_done)}")
+            log("${context.getString(R.string.log_tag_success)} ${context.getString(R.string.log_inject_success)}")
 
             return@withContext InjectResult(true, logs)
         } catch (e: Exception) {
-            val err = context.getString(r.log_exception, e.message ?: "")
-            log("${context.getString(r.log_tag_error)} $err")
+            val err = context.getString(R.string.log_exception, e.message ?: "")
+            log("${context.getString(R.string.log_tag_error)} $err")
             return@withContext InjectResult(false, logs, err)
         }
     }
@@ -507,7 +507,7 @@ class RootRepository(private val context: Context) {
     suspend fun resetAllThemes(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             if (!isRootAvailable()) {
-                return@withContext Result.failure(Exception(context.getString(anhiutangerine.prettiembee.R.string.error_root_required)))
+                return@withContext Result.failure(Exception(context.getString(R.string.error_root_required)))
             }
 
             // 1. Force stop MB Bank
@@ -548,10 +548,10 @@ class RootRepository(private val context: Context) {
                 return@withContext Result.failure(
                     Exception(
                         context.getString(
-                            anhiutangerine.prettiembee.R.string.log_reset_failed,
+                            R.string.log_reset_failed,
                             res.code,
                             errDetails.ifBlank {
-                                context.getString(anhiutangerine.prettiembee.R.string.log_reset_mkdir_blank, unzipDir)
+                                context.getString(R.string.log_reset_mkdir_blank, unzipDir)
                             }
                         )
                     )
@@ -564,4 +564,5 @@ class RootRepository(private val context: Context) {
         }
     }
 }
+
 
