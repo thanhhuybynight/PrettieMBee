@@ -1,3 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English (source locale). Keep keys stable for Weblate / Crowdin. -->
 <resources>
     <string name="app_name">PrettieMBee</string>
+    <string name="mascot_desc">PrettieMBee Cat</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_store">Theme store</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Status card -->
+    <string name="status_root_missing">No root access</string>
+    <string name="status_mb_missing">Not installed</string>
+    <string name="status_theme_installed">Installed</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_applied_theme_label">%1$s - %2$s</string>
+    <string name="status_applied_theme_prio">%1$s - %2$s - Prio</string>
+    <string name="status_theme_preview_desc">Installed theme wallpaper: %1$s</string>
+
+    <!-- Common -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_choose_image">Choose image</string>
+    <string name="action_change">Change</string>
+    <string name="action_remove">Remove</string>
+    <string name="error_generic">Error: %1$s</string>
+    <string name="default_package_hint">Default is \'com.mbmobile\'. If you use Dual App or a clone, enter its package name:</string>
+
+    <!-- Home -->
+    <string name="home_title">PrettieMBee</string>
+    <string name="home_system_info">System information</string>
+    <string name="home_mb_version">MB Bank version</string>
+    <string name="home_android_version">Android version</string>
+    <string name="home_device">Device</string>
+    <string name="home_app_version">PrettieMBee version</string>
+    <string name="home_android_version_value">Android %1$s (API %2$d)</string>
+
+    <!-- Package dialog -->
+    <string name="package_dialog_title">Change target MB Bank package</string>
+
+    <!-- Theme mode dialog -->
+    <string name="theme_mode_dialog_title">Display mode</string>
+    <string name="theme_mode_light">Light Material</string>
+    <string name="theme_mode_dark">Dark Material</string>
+    <string name="theme_mode_oled">OLED Black</string>
+
+    <!-- Accent colors -->
+    <string name="accent_sakura">Sakura Pink</string>
+    <string name="accent_ocean">Ocean Blue</string>
+    <string name="accent_mint">Mint Green</string>
+    <string name="accent_lavender">Lavender Purple</string>
+    <string name="accent_amber">Honey Amber</string>
+    <string name="accent_seed_active">Using wallpaper seed color</string>
+
+    <!-- DPI dialog -->
+    <string name="dpi_dialog_title">Display density (DPI)</string>
+    <string name="dpi_dialog_hint">Override UI density for PrettieMBee only:</string>
+    <string name="dpi_custom">Custom:</string>
+    <string name="dpi_system_default">System default</string>
+    <string name="dpi_value">System default</string>
+    <string name="dpi_value_named">%1$d DPI</string>
+
+    <!-- Reset dialog -->
+    <string name="reset_dialog_title">Restore default theme?</string>
+    <string name="reset_dialog_message">This closes MB Bank and deletes all custom themes, restoring the bank’s original UI.</string>
+    <string name="reset_success">All themes cleared and defaults restored.</string>
+    <string name="reset_needs_root">Root access is required.</string>
+
+    <!-- Toasts -->
+    <string name="toast_refreshing">Refreshing data and theme store…</string>
+    <string name="toast_importing_zip">Processing ZIP file…</string>
+    <string name="toast_import_success">Theme imported.</string>
+    <string name="toast_status_bg_set">Status Card background updated.</string>
+    <string name="toast_app_bg_set">App wallpaper applied.</string>
+    <string name="toast_status_bg_removed">Card background removed.</string>
+    <string name="toast_app_bg_removed">App wallpaper removed.</string>
+
+    <!-- Store -->
+    <string name="store_search_hint">Search themes by name or author…</string>
+    <string name="store_theme_count">%1$d themes</string>
+    <string name="store_all">All</string>
+    <string name="store_sync_github">Sync from GitHub</string>
+    <string name="store_load_zip">Import ZIP</string>
+    <string name="store_downloaded">Downloaded</string>
+    <string name="store_pinned">Pinned</string>
+    <string name="store_pin">Pin</string>
+    <string name="store_unpin">Unpin</string>
+    <string name="store_pin_top">Pin to top</string>
+    <string name="store_unpin_action">Unpin</string>
+    <string name="store_delete_download">Delete download</string>
+    <string name="store_theme_detail">Details</string>
+    <string name="store_search">Search</string>
+    <string name="store_clear">Clear</string>
+    <string name="store_priority">Priority</string>
+
+    <!-- Settings sections -->
+    <string name="settings_mb_config">MB Bank configuration</string>
+    <string name="settings_target_package">Target application package</string>
+    <string name="settings_active_theme">Active theme</string>
+    <string name="settings_ui_theme">Interface &amp; theme</string>
+    <string name="settings_theme_mode">Display mode</string>
+    <string name="settings_accent_color">Accent color</string>
+    <string name="settings_seed_color">Seed color from wallpaper</string>
+    <string name="settings_seed_color_on">Automatically extract accent from app wallpaper</string>
+    <string name="settings_seed_color_off">Set an app wallpaper first</string>
+    <string name="settings_status_card_bg">Status Card background</string>
+    <string name="settings_status_card_bg_set">Custom card background set</string>
+    <string name="settings_status_card_bg_none">Default (no background)</string>
+    <string name="settings_app_bg">App wallpaper</string>
+    <string name="settings_app_bg_set">App wallpaper set</string>
+    <string name="settings_app_bg_none">Default (no wallpaper)</string>
+    <string name="settings_bg_dim">Wallpaper dim</string>
+    <string name="settings_bg_dim_desc">Darken the app wallpaper for readability</string>
+    <string name="settings_card_alpha">Card opacity</string>
+    <string name="settings_card_alpha_desc">How transparent cards appear over the wallpaper</string>
+    <string name="settings_app_dpi">App DPI</string>
+    <string name="settings_system_data">System &amp; data</string>
+    <string name="settings_refresh_status">Refresh status</string>
+    <string name="settings_refresh_status_desc">Rescan root access and MB Bank package</string>
+    <string name="settings_theme_folder">Theme storage folder</string>
+    <string name="settings_reset_themes">Reset all MB Bank themes</string>
+    <string name="settings_reset_themes_desc">Remove every injected theme and restore the bank default</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">English / Tiếng Việt</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+
+    <!-- Theme detail sheet -->
+    <string name="detail_target_section">Apply location in MB Bank</string>
+    <string name="detail_change">Change</string>
+    <string name="detail_options_section">Apply options</string>
+    <string name="detail_priority_mode">Priority mode</string>
+    <string name="detail_priority_desc">Optimize icons and colors for the VIP Priority package</string>
+    <string name="detail_auto_open_mb">Open MB Bank after install</string>
+    <string name="detail_auto_open_mb_desc">Jump to the theme detail page to apply</string>
+    <string name="detail_apply_theme">Apply theme</string>
+    <string name="detail_author_format">%1$s\nAuthor: %2$s</string>
+    <string name="detail_priority_support">Priority Support</string>
+    <string name="detail_change_target_cd">Change target theme</string>
+
+    <!-- Target picker -->
+    <string name="picker_title">Choose target MB Bank theme</string>
+    <string name="picker_subtitle">A custom theme overwrites this package slot in MB Bank</string>
+    <string name="picker_tab_installed">Installed</string>
+    <string name="picker_tab_store">Theme store</string>
+    <string name="picker_search_hint">Search by name or UUID…</string>
+    <string name="picker_installed_count">%1$d installed</string>
+    <string name="picker_store_count">%1$d available</string>
+
+    <!-- Flash screen -->
+    <string name="flash_back">Back</string>
+    <string name="flash_install_log">Installation log</string>
+    <string name="flash_success_title">Theme installed</string>
+    <string name="flash_success_body">%1$s is ready. Open MB Bank and tap Apply to finish.</string>
+    <string name="flash_open_mb">Open MB Bank</string>
+    <string name="flash_copy_log">Copy log</string>
+    <string name="flash_failed_title">Installation failed</string>
+    <string name="flash_retry">Try again</string>
+    <string name="flash_copied">Log copied to clipboard</string>
+    <string name="flash_in_progress">Applying theme…</string>
+    <string name="flash_log_version">Version: v1.0 (%1$s)</string>
+    <string name="flash_log_source">Theme source: %1$s</string>
+    <string name="flash_log_target">Apply to: %1$s</string>
+    <string name="flash_log_package">Target package: %1$s</string>
+
+    <!-- Error messages -->
+    <string name="error_no_download_url">This theme has no direct download link</string>
+    <string name="error_cannot_connect">Cannot connect to the server</string>
+    <string name="error_zip_structure">ZIP layout is invalid (need images/*.png + theme/token.json)</string>
+    <string name="error_zip_contents">ZIP layout is invalid (need images/*.png + theme/token.json). Extracted: %1$s</string>
+    <string name="error_zip_invalid">Invalid ZIP: needs images/*.png and theme/token.json</string>
+    <string name="error_zip_no_token">Invalid ZIP: missing theme/token.json</string>
+    <string name="error_zip_read">Cannot read ZIP from device storage</string>
+    <string name="error_root_required">Root access is required for this action.</string>
+    <string name="error_missing_theme_assets">Missing theme assets at %1$s (missing: %2$s)</string>
+    <string name="error_no_uid_gid">Cannot get UID/GID of %1$s. Install MB Bank and open it at least once.</string>
+
+    <!-- Splash / misc -->
+    <string name="splash_subtitle">MB Bank custom theme injector</string>
 </resources>

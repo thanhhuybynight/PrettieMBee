@@ -20,10 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import anhiutangerine.prettiembee.R
 import anhiutangerine.prettiembee.data.model.CommunityTheme
 import anhiutangerine.prettiembee.ui.theme.SakuraAccent
 import anhiutangerine.prettiembee.ui.theme.SuccessGreen
@@ -112,12 +114,12 @@ fun ThemeCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.PushPin,
-                                    contentDescription = "Đã ghim",
+                                    contentDescription = stringResource(R.string.store_pinned),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(10.dp)
                                 )
                                 Text(
-                                    text = "Ghim",
+                                    text = stringResource(R.string.store_pinned),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.SemiBold,
@@ -134,7 +136,7 @@ fun ThemeCard(
                             color = SuccessGreen.copy(alpha = 0.12f)
                         ) {
                             Text(
-                                text = "Đã tải",
+                                text = stringResource(R.string.store_downloaded),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -151,7 +153,7 @@ fun ThemeCard(
                             color = SakuraAccent.copy(alpha = 0.12f)
                         ) {
                             Text(
-                                text = "Priority",
+                                text = stringResource(R.string.store_priority),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -189,7 +191,7 @@ fun ThemeCard(
             Box {
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
-                    contentDescription = "Chi tiết",
+                    contentDescription = stringResource(R.string.store_theme_detail),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
                     modifier = Modifier.size(20.dp)
                 )
@@ -199,7 +201,7 @@ fun ThemeCard(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text(if (isPinned) "Bỏ ghim" else "Ghim lên đầu") },
+                        text = { Text(if (isPinned) stringResource(R.string.store_unpin_action) else stringResource(R.string.store_pin_top)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Rounded.PushPin,
@@ -213,7 +215,7 @@ fun ThemeCard(
                     )
                     if (isDownloaded) {
                         DropdownMenuItem(
-                            text = { Text("Xoá bản tải") },
+                            text = { Text(stringResource(R.string.store_delete_download)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Rounded.Delete,

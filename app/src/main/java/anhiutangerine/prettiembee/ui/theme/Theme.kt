@@ -2,9 +2,11 @@ package anhiutangerine.prettiembee.ui.theme
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -28,56 +30,59 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.core.view.WindowCompat
+import anhiutangerine.prettiembee.R
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Locale
 
-enum class AppThemeMode(val title: String) {
-    LIGHT("Trắng Material"),
-    MATERIAL_DARK("Đen Material"),
-    OLED_DARK("Đen OLED")
+enum class AppThemeMode(@StringRes val titleRes: Int) {
+    LIGHT(R.string.theme_mode_light),
+    MATERIAL_DARK(R.string.theme_mode_dark),
+    OLED_DARK(R.string.theme_mode_oled)
 }
 
 enum class AppThemeAccent(
-    val title: String,
+    @StringRes val titleRes: Int,
     val previewColor: Color,
     val lightPrimary: Color,
     val darkPrimary: Color,
     val secondary: Color
 ) {
     SAKURA(
-        title = "Hồng Sakura",
+        titleRes = R.string.accent_sakura,
         previewColor = SakuraPink,
         lightPrimary = SakuraPinkDark,
         darkPrimary = SakuraPink,
         secondary = SakuraAccent
     ),
     OCEAN(
-        title = "Xanh Biển",
+        titleRes = R.string.accent_ocean,
         previewColor = OceanBlueLight,
         lightPrimary = OceanBlue,
         darkPrimary = OceanBlueLight,
         secondary = Color(0xFF42A5F5)
     ),
     MINT(
-        title = "Xanh Bạc Hà",
+        titleRes = R.string.accent_mint,
         previewColor = MintGreenLight,
         lightPrimary = MintGreen,
         darkPrimary = MintGreenLight,
         secondary = Color(0xFF66BB6A)
     ),
     LAVENDER(
-        title = "Tím Oải Hương",
+        titleRes = R.string.accent_lavender,
         previewColor = LavenderPurpleLight,
         lightPrimary = LavenderPurple,
         darkPrimary = LavenderPurpleLight,
         secondary = Color(0xFFAB47BC)
     ),
     AMBER(
-        title = "Cam Mật Ong",
+        titleRes = R.string.accent_amber,
         previewColor = AmberOrangeLight,
         lightPrimary = AmberOrange,
         darkPrimary = AmberOrangeLight,
@@ -93,7 +98,6 @@ data class CustomAccentColors(
 )
 
 object ThemeConfig {
-    private const val PREFS_NAME = "prettiembee_theme_prefs"
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_THEME_ACCENT = "theme_accent"
     private const val KEY_STATUS_BG_URI = "status_bg_uri"
@@ -110,6 +114,10 @@ object ThemeConfig {
     private const val KEY_APPLIED_IS_PRIORITY = "applied_is_priority"
     private const val KEY_APPLIED_THEME_ID = "applied_theme_id"
     private const val KEY_PINNED_THEMES = "pinned_theme_ids"
+    private const val KEY_APP_LANGUAGE = "app_language"
+
+    /** Stable prefs file name — also read from attachBaseContext before load(). */
+    const val PREFS_NAME = "prettiembee_theme_prefs"
 
     var themeMode by mutableStateOf(AppThemeMode.LIGHT)
     var themeAccent by mutableStateOf(AppThemeAccent.SAKURA)
@@ -129,6 +137,9 @@ object ThemeConfig {
 
     // Store pin state (community / custom theme ids)
     var pinnedThemeIds by mutableStateOf<Set<String>>(emptySet())
+
+    /** BCP-47-ish tag: "en" or "vi". */
+    var appLanguageTag by mutableStateOf(resolveDefaultLanguageTag())
 
     fun load(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -179,6 +190,35 @@ object ThemeConfig {
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .toSet()
+
+        appLanguageTag = prefs.getString(KEY_APP_LANGUAGE, resolveDefaultLanguageTag())
+            ?: resolveDefaultLanguageTag()
+    }
+
+    fun resolveDefaultLanguageTag(): String {
+        val sys = Locale.getDefault().language
+        return if (sys.equals("vi", ignoreCase = true)) "vi" else "en"
+    }
+
+    fun saveAppLanguage(context: Context, languageTag: String) {
+        appLanguageTag = languageTag
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putString(KEY_APP_LANGUAGE, languageTag)
+            .apply()
+        Locale.setDefault(Locale(languageTag))
+        (context as? Activity)?.recreate()
+    }
+
+    /** Wrap a base Context so resources resolve in the saved language. */
+    fun applyLocale(base: Context): Context {
+        val tag = base.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_APP_LANGUAGE, null)
+            ?: resolveDefaultLanguageTag()
+        val locale = Locale(tag)
+        Locale.setDefault(locale)
+        val config = Configuration(base.resources.configuration)
+        config.setLocale(locale)
+        return base.createConfigurationContext(config)
     }
 
     fun isPinnedTheme(themeId: String): Boolean = themeId in pinnedThemeIds

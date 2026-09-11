@@ -29,28 +29,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import anhiutangerine.prettiembee.R
 import kotlin.math.roundToInt
 
 data class BottomBarItem(
     val icon: ImageVector,
-    val contentDescription: String
+    val labelRes: Int
 )
 
-val NavigationItems = listOf(
-    BottomBarItem(
-        icon = Icons.Rounded.Home,
-        contentDescription = "Trang chủ"
-    ),
-    BottomBarItem(
-        icon = Icons.Rounded.Palette,
-        contentDescription = "Kho theme"
-    ),
-    BottomBarItem(
-        icon = Icons.Rounded.Settings,
-        contentDescription = "Cài đặt"
-    )
+@Composable
+fun defaultNavigationItems(): List<BottomBarItem> = listOf(
+    BottomBarItem(Icons.Rounded.Home, R.string.nav_home),
+    BottomBarItem(Icons.Rounded.Palette, R.string.nav_store),
+    BottomBarItem(Icons.Rounded.Settings, R.string.nav_settings)
 )
 
 @Composable
@@ -58,9 +52,10 @@ fun FloatingBottomBar(
     selectedIndex: Int,
     onItemSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    items: List<BottomBarItem> = NavigationItems,
+    items: List<BottomBarItem> = emptyList(),
     visible: Boolean = true
 ) {
+    val navItems = if (items.isNotEmpty()) items else defaultNavigationItems()
     val density = LocalDensity.current
     val itemSize = 56.dp
     val itemSpacing = 6.dp
@@ -69,10 +64,10 @@ fun FloatingBottomBar(
     val itemSizePx = with(density) { itemSize.toPx() }
     val itemSpacingPx = with(density) { itemSpacing.toPx() }
 
-    val navBarWidth = (itemSize * items.size) + (itemSpacing * (items.size - 1)) + (containerPadding * 2)
+    val navBarWidth = (itemSize * navItems.size) + (itemSpacing * (navItems.size - 1)) + (containerPadding * 2)
 
     val animatedSelectedIndex by animateFloatAsState(
-        targetValue = selectedIndex.toFloat().coerceIn(0f, (items.size - 1).toFloat()),
+        targetValue = selectedIndex.toFloat().coerceIn(0f, (navItems.size - 1).toFloat()),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -124,7 +119,7 @@ fun FloatingBottomBar(
                         horizontalArrangement = Arrangement.spacedBy(itemSpacing),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items.forEachIndexed { index, item ->
+                        navItems.forEachIndexed { index, item ->
                             val isSelected = index == selectedIndex
                             val interactionSource = remember { MutableInteractionSource() }
 
@@ -141,7 +136,7 @@ fun FloatingBottomBar(
                             ) {
                                 Icon(
                                     imageVector = item.icon,
-                                    contentDescription = item.contentDescription,
+                                    contentDescription = stringResource(item.labelRes),
                                     tint = if (isSelected) {
                                         MaterialTheme.colorScheme.primary
                                     } else {

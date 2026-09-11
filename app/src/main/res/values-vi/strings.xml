@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vietnamese. Keep keys in sync with values/strings.xml -->
+<resources>
+    <string name="app_name">PrettieMBee</string>
+    <string name="mascot_desc">Mèo PrettieMBee</string>
+
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_store">Kho theme</string>
+    <string name="nav_settings">Cài đặt</string>
+
+    <string name="status_root_missing">Chưa có quyền root</string>
+    <string name="status_mb_missing">Chưa cài đặt</string>
+    <string name="status_theme_installed">Đã cài đặt</string>
+    <string name="status_ready">Sẵn sàng</string>
+    <string name="status_applied_theme_label">%1$s - %2$s</string>
+    <string name="status_applied_theme_prio">%1$s - %2$s - Prio</string>
+    <string name="status_theme_preview_desc">Ảnh nền theme đang cài: %1$s</string>
+
+    <string name="action_save">Lưu</string>
+    <string name="action_cancel">Huỷ</string>
+    <string name="action_reset">Đặt lại</string>
+    <string name="action_delete">Xoá</string>
+    <string name="action_refresh">Làm mới</string>
+    <string name="action_apply">Áp dụng</string>
+    <string name="action_choose_image">Chọn ảnh</string>
+    <string name="action_change">Đổi</string>
+    <string name="action_remove">Gỡ</string>
+    <string name="error_generic">Lỗi: %1$s</string>
+    <string name="default_package_hint">Mặc định là \'com.mbmobile\'. Nếu bạn dùng ứng dụng kép (Dual App) hoặc bản Clone, hãy nhập package tương ứng:</string>
+
+    <string name="home_title">PrettieMBee</string>
+    <string name="home_system_info">Thông tin hệ thống</string>
+    <string name="home_mb_version">Phiên bản MB Bank</string>
+    <string name="home_android_version">Phiên bản Android</string>
+    <string name="home_device">Thiết bị</string>
+    <string name="home_app_version">Phiên bản PrettieMBee</string>
+    <string name="home_android_version_value">Android %1$s (API %2$d)</string>
+
+    <string name="package_dialog_title">Đổi gói MB Bank mục tiêu</string>
+
+    <string name="theme_mode_dialog_title">Chế độ giao diện</string>
+    <string name="theme_mode_light">Trắng Material</string>
+    <string name="theme_mode_dark">Đen Material</string>
+    <string name="theme_mode_oled">Đen OLED</string>
+
+    <string name="accent_sakura">Hồng Sakura</string>
+    <string name="accent_ocean">Xanh Biển</string>
+    <string name="accent_mint">Xanh Bạc Hà</string>
+    <string name="accent_lavender">Tím Oải Hương</string>
+    <string name="accent_amber">Cam Mật Ong</string>
+    <string name="accent_seed_active">Đang dùng màu từ hình nền</string>
+
+    <string name="dpi_dialog_title">Mật độ hiển thị (DPI)</string>
+    <string name="dpi_dialog_hint">Điều chỉnh tỷ lệ giao diện riêng cho PrettieMBee:</string>
+    <string name="dpi_custom">Tuỳ chỉnh:</string>
+    <string name="dpi_system_default">Mặc định (Theo hệ thống)</string>
+    <string name="dpi_value">Mặc định (Theo hệ thống)</string>
+    <string name="dpi_value_named">%1$d DPI</string>
+
+    <string name="reset_dialog_title">Khôi phục theme mặc định?</string>
+    <string name="reset_dialog_message">Thao tác này sẽ đóng ứng dụng MB Bank và xoá sạch toàn bộ các theme tuỳ chỉnh đã cài đặt, đưa giao diện MB Bank về mặc định ban đầu của ngân hàng.</string>
+    <string name="reset_success">Đã xoá toàn bộ theme và khôi phục mặc định thành công!</string>
+    <string name="reset_needs_root">Yêu cầu quyền root để thực hiện!</string>
+
+    <string name="toast_refreshing">Đang làm mới dữ liệu và đồng bộ kho theme…</string>
+    <string name="toast_importing_zip">Đang xử lý file ZIP…</string>
+    <string name="toast_import_success">Nạp theme thành công!</string>
+    <string name="toast_status_bg_set">Đã cập nhật ảnh nền Status Card</string>
+    <string name="toast_app_bg_set">Đã áp dụng hình nền toàn ứng dụng</string>
+    <string name="toast_status_bg_removed">Đã xoá nền thẻ</string>
+    <string name="toast_app_bg_removed">Đã xoá hình nền ứng dụng</string>
+
+    <string name="store_search_hint">Tìm theme theo tên hoặc tác giả…</string>
+    <string name="store_theme_count">%1$d theme</string>
+    <string name="store_all">Tất cả</string>
+    <string name="store_sync_github">Đồng bộ từ GitHub</string>
+    <string name="store_load_zip">Nạp ZIP</string>
+    <string name="store_downloaded">Đã tải</string>
+    <string name="store_pinned">Ghim</string>
+    <string name="store_pin">Ghim</string>
+    <string name="store_unpin">Bỏ ghim</string>
+    <string name="store_pin_top">Ghim lên đầu</string>
+    <string name="store_unpin_action">Bỏ ghim</string>
+    <string name="store_delete_download">Xoá bản tải</string>
+    <string name="store_theme_detail">Chi tiết</string>
+    <string name="store_search">Tìm</string>
+    <string name="store_clear">Xoá</string>
+    <string name="store_priority">Priority</string>
+
+    <string name="settings_mb_config">Cấu hình MB Bank</string>
+    <string name="settings_target_package">Gói ứng dụng mục tiêu</string>
+    <string name="settings_active_theme">Theme đang kích hoạt</string>
+    <string name="settings_ui_theme">Giao diện &amp; Chủ đề</string>
+    <string name="settings_theme_mode">Chế độ nền</string>
+    <string name="settings_accent_color">Màu chủ đạo</string>
+    <string name="settings_seed_color">Lấy màu từ hình nền</string>
+    <string name="settings_seed_color_on">Tự động trích xuất màu nhấn từ ảnh nền app</string>
+    <string name="settings_seed_color_off">Cần đặt hình nền app trước</string>
+    <string name="settings_status_card_bg">Nền Status Card</string>
+    <string name="settings_status_card_bg_set">Đã cài ảnh nền riêng cho thẻ</string>
+    <string name="settings_status_card_bg_none">Mặc định (Không nền)</string>
+    <string name="settings_app_bg">Nền toàn ứng dụng</string>
+    <string name="settings_app_bg_set">Đã cài hình nền app</string>
+    <string name="settings_app_bg_none">Mặc định (Không nền)</string>
+    <string name="settings_bg_dim">Độ tối nền</string>
+    <string name="settings_bg_dim_desc">Điều chỉnh độ sẫm của hình nền app</string>
+    <string name="settings_card_alpha">Độ trong suốt thẻ (Card Alpha)</string>
+    <string name="settings_card_alpha_desc">Độ mờ thẻ hiển thị xuyên hình nền</string>
+    <string name="settings_app_dpi">DPI ứng dụng</string>
+    <string name="settings_system_data">Hệ thống &amp; Dữ liệu</string>
+    <string name="settings_refresh_status">Làm mới trạng thái</string>
+    <string name="settings_refresh_status_desc">Quét lại quyền root và kiểm tra ứng dụng MB</string>
+    <string name="settings_theme_folder">Thư mục lưu trữ theme</string>
+    <string name="settings_reset_themes">Xoá toàn bộ theme MB Bank</string>
+    <string name="settings_reset_themes_desc">Gỡ bỏ tất cả theme đã nạp và hoàn tác về mặc định</string>
+    <string name="settings_language">Ngôn ngữ</string>
+    <string name="settings_language_desc">English / Tiếng Việt</string>
+    <string name="language_english">English</string>
+    <string name="language_vietnamese">Tiếng Việt</string>
+
+    <string name="detail_target_section">Vị trí áp dụng trong MB Bank</string>
+    <string name="detail_change">Đổi</string>
+    <string name="detail_options_section">Tuỳ chọn áp dụng</string>
+    <string name="detail_priority_mode">Chế độ Priority</string>
+    <string name="detail_priority_desc">Tối ưu biểu tượng và màu sắc cho gói VIP Priority</string>
+    <string name="detail_auto_open_mb">Mở MB Bank sau khi nạp</string>
+    <string name="detail_auto_open_mb_desc">Tự chuyển đến trang chi tiết theme để áp dụng</string>
+    <string name="detail_apply_theme">Áp dụng theme</string>
+    <string name="detail_author_format">%1$s\nTác giả: %2$s</string>
+    <string name="detail_priority_support">Priority Support</string>
+    <string name="detail_change_target_cd">Đổi theme đích</string>
+
+    <string name="picker_title">Chọn theme đích MB Bank</string>
+    <string name="picker_subtitle">Theme tuỳ chỉnh sẽ ghi đè vào gói theme này trong MB Bank</string>
+    <string name="picker_tab_installed">Đã cài</string>
+    <string name="picker_tab_store">Kho theme</string>
+    <string name="picker_search_hint">Tìm theo tên hoặc UUID…</string>
+    <string name="picker_installed_count">%1$d đã cài</string>
+    <string name="picker_store_count">%1$d khả dụng</string>
+
+    <string name="flash_back">Quay lại</string>
+    <string name="flash_install_log">Nhật ký cài đặt</string>
+    <string name="flash_success_title">Cài theme thành công</string>
+    <string name="flash_success_body">%1$s đã sẵn sàng. Mở MB Bank và bấm Áp dụng để hoàn tất.</string>
+    <string name="flash_open_mb">Mở MB Bank</string>
+    <string name="flash_copy_log">Sao chép log</string>
+    <string name="flash_failed_title">Cài đặt thất bại</string>
+    <string name="flash_retry">Thử lại</string>
+    <string name="flash_copied">Đã sao chép log</string>
+    <string name="flash_in_progress">Đang áp dụng theme…</string>
+    <string name="flash_log_version">Phiên bản: v1.0 (%1$s)</string>
+    <string name="flash_log_source">Nguồn theme: %1$s</string>
+    <string name="flash_log_target">Vị trí áp dụng: %1$s</string>
+    <string name="flash_log_package">Gói đích: %1$s</string>
+
+    <string name="error_no_download_url">Theme không có link tải trực tiếp</string>
+    <string name="error_cannot_connect">Không thể kết nối đến máy chủ</string>
+    <string name="error_zip_structure">ZIP không đúng cấu trúc (cần images/*.png + theme/token.json)</string>
+    <string name="error_zip_contents">ZIP không đúng cấu trúc (cần images/*.png + theme/token.json). Nội dung sau giải nén: %1$s</string>
+    <string name="error_zip_invalid">File ZIP không hợp lệ: cần images/*.png và theme/token.json</string>
+    <string name="error_zip_no_token">File ZIP không hợp lệ: thiếu file theme/token.json</string>
+    <string name="error_zip_read">Không thể đọc file ZIP từ bộ nhớ máy</string>
+    <string name="error_root_required">Yêu cầu quyền root để thực hiện.</string>
+    <string name="error_missing_theme_assets">Thiếu tài nguyên theme tại %1$s (thiếu: %2$s)</string>
+    <string name="error_no_uid_gid">Không thể lấy UID/GID của %1$s. Hãy đảm bảo MB Bank đã được cài đặt và mở ít nhất một lần!</string>
+
+    <string name="splash_subtitle">MB Bank Custom Theme Injector</string>
+</resources>

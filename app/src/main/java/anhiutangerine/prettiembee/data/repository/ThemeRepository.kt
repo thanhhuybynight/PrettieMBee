@@ -152,7 +152,7 @@ class ThemeRepository(private val context: Context) {
         theme: CommunityTheme,
         onProgress: (Float) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
-        val downloadUrl = theme.downloadUrl ?: return@withContext Result.failure(Exception("Theme không có link tải trực tiếp"))
+        val downloadUrl = theme.downloadUrl ?: return@withContext Result.failure(Exception(context.getString(anhiutangerine.prettiembee.R.string.error_no_download_url)))
         try {
             val destDir = getThemeDir(theme.id)
             // Wipe any leftover Magisk junk / partial extracts before unpack
@@ -186,7 +186,7 @@ class ThemeRepository(private val context: Context) {
                 break
             }
 
-            val finalConn = conn ?: return@withContext Result.failure(Exception("Không thể kết nối đến máy chủ"))
+            val finalConn = conn ?: return@withContext Result.failure(Exception(context.getString(anhiutangerine.prettiembee.R.string.error_cannot_connect)))
             if (finalConn.responseCode !in 200..299) {
                 return@withContext Result.failure(Exception("HTTP error ${finalConn.responseCode}: ${finalConn.responseMessage}"))
             }
@@ -220,8 +220,11 @@ class ThemeRepository(private val context: Context) {
                 destDir.deleteRecursively()
                 return@withContext Result.failure(
                     Exception(
-                        "ZIP không đúng cấu trúc (cần images/*.png + theme/token.json)" +
-                            if (listing.isNotBlank()) ". Nội dung sau giải nén: $listing" else ""
+                        if (listing.isNotBlank()) {
+                            context.getString(anhiutangerine.prettiembee.R.string.error_zip_contents, listing)
+                        } else {
+                            context.getString(anhiutangerine.prettiembee.R.string.error_zip_structure)
+                        }
                     )
                 )
             }
@@ -245,7 +248,7 @@ class ThemeRepository(private val context: Context) {
                 FileOutputStream(tempZip).use { output ->
                     input.copyTo(output)
                 }
-            } ?: return@withContext Result.failure(Exception("Không thể đọc file ZIP từ bộ nhớ máy"))
+            } ?: return@withContext Result.failure(Exception(context.getString(anhiutangerine.prettiembee.R.string.error_zip_read)))
 
             unzipFile(tempZip, destDir)
             tempZip.delete()
@@ -256,7 +259,7 @@ class ThemeRepository(private val context: Context) {
             if (!hasValidThemeLayout(destDir)) {
                 destDir.deleteRecursively()
                 return@withContext Result.failure(
-                    Exception("File ZIP không hợp lệ: cần images/*.png và theme/token.json")
+                    Exception(context.getString(anhiutangerine.prettiembee.R.string.error_zip_invalid))
                 )
             }
 

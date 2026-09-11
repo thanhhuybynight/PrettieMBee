@@ -16,9 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import anhiutangerine.prettiembee.R
 import anhiutangerine.prettiembee.data.model.CommunityTheme
 import anhiutangerine.prettiembee.data.model.InjectConfig
 import anhiutangerine.prettiembee.ui.components.SegmentedGroup
@@ -102,7 +104,7 @@ fun ThemeDetailSheet(
                                 color = SakuraAccent.copy(alpha = 0.12f)
                             ) {
                                 Text(
-                                    text = "Priority Support",
+                                    text = stringResource(R.string.detail_priority_support),
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
@@ -130,7 +132,7 @@ fun ThemeDetailSheet(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "${theme.description}\nTác giả: ${theme.author}",
+                text = stringResource(R.string.detail_author_format, theme.description, theme.author),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 lineHeight = 18.sp
@@ -140,7 +142,7 @@ fun ThemeDetailSheet(
 
             // TARGET MB THEME SELECTOR
             SegmentedGroup(
-                title = "Vị trí áp dụng trong MB Bank"
+                title = stringResource(R.string.detail_target_section)
             ) {
                 Surface(
                     modifier = Modifier
@@ -173,7 +175,7 @@ fun ThemeDetailSheet(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Đổi",
+                                text = stringResource(R.string.detail_change),
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.SemiBold
@@ -182,7 +184,7 @@ fun ThemeDetailSheet(
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = "Đổi theme đích",
+                                contentDescription = stringResource(R.string.detail_change_target_cd),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -195,12 +197,12 @@ fun ThemeDetailSheet(
 
             // OPTIONS GROUP
             SegmentedGroup(
-                title = "Tuỳ chọn áp dụng"
+                title = stringResource(R.string.detail_options_section)
             ) {
                 if (theme.supportsPriority) {
                     SegmentedItem(
-                        title = "Chế độ Priority",
-                        subtitle = "Tối ưu biểu tượng và màu sắc cho gói VIP Priority",
+                        title = stringResource(R.string.detail_priority_mode),
+                        subtitle = stringResource(R.string.detail_priority_desc),
                         icon = Icons.Rounded.Star,
                         iconTint = SakuraAccent,
                         showDivider = true,
@@ -218,8 +220,8 @@ fun ThemeDetailSheet(
                 }
 
                 SegmentedItem(
-                    title = "Mở MB Bank sau khi nạp",
-                    subtitle = "Tự chuyển đến trang chi tiết theme để áp dụng",
+                    title = stringResource(R.string.detail_auto_open_mb),
+                    subtitle = stringResource(R.string.detail_auto_open_mb_desc),
                     icon = Icons.Rounded.AutoAwesome,
                     iconTint = SakuraPink,
                     showDivider = false,
@@ -266,7 +268,7 @@ fun ThemeDetailSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Áp dụng theme",
+                    text = stringResource(R.string.detail_apply_theme),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp

@@ -1,5 +1,7 @@
 package anhiutangerine.prettiembee
 
+import android.content.Context
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -27,11 +29,16 @@ import anhiutangerine.prettiembee.ui.theme.PrettieMBeeTheme
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var rootRepository: RootRepository
     private lateinit var themeRepository: ThemeRepository
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ThemeConfig.applyLocale(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,7 +122,7 @@ class MainActivity : ComponentActivity() {
                             communityThemes = communityThemes,
                             isThemeDownloaded = { theme -> theme.id in downloadedThemeIds },
                             onRefreshStatus = {
-                                Toast.makeText(applicationContext, "Đang làm mới dữ liệu và đồng bộ kho theme...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(applicationContext, applicationContext.getString(R.string.toast_refreshing), Toast.LENGTH_SHORT).show()
                                 refreshAll()
                             },
                             onChangePackage = { newPkg ->
@@ -142,10 +149,10 @@ class MainActivity : ComponentActivity() {
                             },
                             onImportZip = { uri, fileName ->
                                 coroutineScope.launch {
-                                    Toast.makeText(applicationContext, "Đang xử lý file ZIP...", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(applicationContext, applicationContext.getString(R.string.toast_importing_zip), Toast.LENGTH_SHORT).show()
                                     val res = themeRepository.importCustomZip(uri, fileName)
                                     if (res.isSuccess) {
-                                        Toast.makeText(applicationContext, "Nạp theme thành công!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(applicationContext, applicationContext.getString(R.string.toast_import_success), Toast.LENGTH_SHORT).show()
                                         communityThemes = themeRepository.getCommunityThemes()
                                         downloadedThemeIds = communityThemes
                                             .filter { themeRepository.isThemeDownloaded(it) }
@@ -155,12 +162,15 @@ class MainActivity : ComponentActivity() {
                                             selectedThemeForDetail = imported
                                         }
                                     } else {
-                                        Toast.makeText(applicationContext, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(applicationContext, applicationContext.getString(R.string.error_generic, res.exceptionOrNull()?.message ?: ""), Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },
                             onResetThemes = {
                                 rootRepository.resetAllThemes()
+                            },
+                            onLanguageChange = { tag ->
+                                ThemeConfig.saveAppLanguage(applicationContext, tag)
                             }
                         )
                     }
@@ -183,7 +193,8 @@ class MainActivity : ComponentActivity() {
                                 val initialLines = FlashScreenConstants.createInitialLogs(
                                     config = config,
                                     currentTargetName = currentTargetName,
-                                    targetPackage = targetPackage
+                                    targetPackage = targetPackage,
+                                    context = applicationContext
                                 )
                                 injectLogs.addAll(initialLines)
                                 isFlashScreenOpen = true

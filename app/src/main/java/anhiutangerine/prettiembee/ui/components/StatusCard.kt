@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,7 +103,7 @@ fun StatusCard(
                             .allowHardware(false)
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Ảnh nền theme đang cài: $appliedNewTheme",
+                        contentDescription = stringResource(R.string.status_theme_preview_desc, appliedNewTheme.orEmpty()),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
@@ -129,17 +130,19 @@ fun StatusCard(
                         ) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_prettiembee_logo),
-                                contentDescription = "PrettieMBee Cat",
+                                contentDescription = stringResource(R.string.mascot_desc),
                                 modifier = Modifier.size(40.dp)
                             )
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = if (isRootGranted && isMbInstalled) "Đã cài đặt" else {
+                            text = if (isRootGranted && isMbInstalled) {
+                                stringResource(R.string.status_theme_installed)
+                            } else {
                                 when {
-                                    !isRootGranted -> "Chưa có quyền root"
-                                    !isMbInstalled -> "Chưa cài đặt"
-                                    else -> "Sẵn sàng"
+                                    !isRootGranted -> stringResource(R.string.status_root_missing)
+                                    !isMbInstalled -> stringResource(R.string.status_mb_missing)
+                                    else -> stringResource(R.string.status_ready)
                                 }
                             },
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -151,7 +154,11 @@ fun StatusCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         val prioSuffix = if (appliedIsPriority) " - Prio" else ""
                         Text(
-                            text = "$appliedNewTheme - $appliedOriginalTheme$prioSuffix",
+                            text = if (appliedIsPriority) {
+                                stringResource(R.string.status_applied_theme_prio, appliedNewTheme.orEmpty(), appliedOriginalTheme.orEmpty())
+                            } else {
+                                stringResource(R.string.status_applied_theme_label, appliedNewTheme.orEmpty(), appliedOriginalTheme.orEmpty())
+                            },
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 12.sp
@@ -185,7 +192,7 @@ fun StatusCard(
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_prettiembee_logo),
-                            contentDescription = "PrettieMBee Cat",
+                            contentDescription = stringResource(R.string.mascot_desc),
                             modifier = Modifier.size(54.dp)
                         )
                     }
@@ -193,10 +200,10 @@ fun StatusCard(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     val statusText = when {
-                        !isRootGranted -> "Chưa có quyền root"
-                        !isMbInstalled -> "Chưa cài đặt"
-                        isThemeInstalled -> "Đã cài đặt"
-                        else -> "Sẵn sàng"
+                        !isRootGranted -> stringResource(R.string.status_root_missing)
+                        !isMbInstalled -> stringResource(R.string.status_mb_missing)
+                        isThemeInstalled -> stringResource(R.string.status_theme_installed)
+                        else -> stringResource(R.string.status_ready)
                     }
 
                     Text(
@@ -212,7 +219,11 @@ fun StatusCard(
                     if (isThemeInstalled && isRootGranted && isMbInstalled) {
                         Spacer(modifier = Modifier.height(6.dp))
                         val prioSuffix = if (appliedIsPriority) " - Prio" else ""
-                        val subtitleText = "$appliedNewTheme - $appliedOriginalTheme$prioSuffix"
+                        val subtitleText = if (appliedIsPriority) {
+                            stringResource(R.string.status_applied_theme_prio, appliedNewTheme.orEmpty(), appliedOriginalTheme.orEmpty())
+                        } else {
+                            stringResource(R.string.status_applied_theme_label, appliedNewTheme.orEmpty(), appliedOriginalTheme.orEmpty())
+                        }
                         Text(
                             text = subtitleText,
                             style = MaterialTheme.typography.bodyMedium.copy(

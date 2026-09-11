@@ -15,9 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import anhiutangerine.prettiembee.R
 import anhiutangerine.prettiembee.data.model.InstalledTheme
 import anhiutangerine.prettiembee.data.model.MbStoreTheme
 import anhiutangerine.prettiembee.ui.theme.SakuraPink
@@ -52,7 +54,7 @@ fun TargetThemePickerBottomSheet(
                 .padding(bottom = 28.dp)
         ) {
             Text(
-                text = "Chọn theme đích MB Bank",
+                text = stringResource(R.string.picker_title),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
@@ -61,7 +63,7 @@ fun TargetThemePickerBottomSheet(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Theme tuỳ chỉnh sẽ ghi đè vào gói theme này trong MB Bank",
+                text = stringResource(R.string.picker_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
@@ -99,7 +101,7 @@ fun TargetThemePickerBottomSheet(
                             modifier = Modifier.padding(vertical = 8.dp)
                         ) {
                             Text(
-                                text = "Đã có trên máy (${installedThemes.size})",
+                                text = stringResource(R.string.picker_installed_count, installedThemes.size),
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
                                     color = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -118,7 +120,7 @@ fun TargetThemePickerBottomSheet(
                             modifier = Modifier.padding(vertical = 8.dp)
                         ) {
                             Text(
-                                text = "Kho MB Store (${storeThemes.size})",
+                                text = stringResource(R.string.picker_store_count, storeThemes.size),
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
                                     color = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -138,7 +140,7 @@ fun TargetThemePickerBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
-                        text = "Tìm theo tên hoặc UUID...",
+                        text = stringResource(R.string.picker_search_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )

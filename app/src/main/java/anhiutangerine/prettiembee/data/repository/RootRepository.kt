@@ -293,7 +293,7 @@ class RootRepository(private val context: Context) {
             val uidGid = resolveUidGid(dataDir)
 
             if (uidGid.isNullOrBlank() || !uidGid.contains(":")) {
-                val err = "Không thể lấy UID/GID của $targetPackage. Hãy đảm bảo MB Bank đã được cài đặt và mở ít nhất một lần!"
+                val err = context.getString(anhiutangerine.prettiembee.R.string.error_no_uid_gid, targetPackage)
                 log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
@@ -320,7 +320,7 @@ class RootRepository(private val context: Context) {
                 }
             }
             if (missing.isNotEmpty()) {
-                val err = "Thiếu tài nguyên theme tại ${themeDir.absolutePath} (thiếu: ${missing.joinToString()})"
+                val err = context.getString(anhiutangerine.prettiembee.R.string.error_missing_theme_assets, themeDir.absolutePath, missing.joinToString())
                 log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
             }
@@ -499,7 +499,7 @@ class RootRepository(private val context: Context) {
     suspend fun resetAllThemes(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             if (!isRootAvailable()) {
-                return@withContext Result.failure(Exception("Ứng dụng chưa được cấp quyền Root!"))
+                return@withContext Result.failure(Exception(context.getString(anhiutangerine.prettiembee.R.string.error_root_required)))
             }
 
             // 1. Force stop MB Bank
