@@ -1305,6 +1305,7 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
 
             // Floating ZIP Import Button above navbar (Kho theme tab only)
             AnimatedVisibility(
@@ -1353,6 +1354,4 @@ fun HomeScreen(
             }
         }
     }
-}
-
 }
