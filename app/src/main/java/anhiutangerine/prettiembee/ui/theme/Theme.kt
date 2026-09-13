@@ -34,6 +34,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
 
 enum class AppThemeMode(val title: String) {
     LIGHT("Trắng Material"),
@@ -208,26 +209,27 @@ object ThemeConfig {
             .apply()
     }
 
-    fun saveStatusCardBackground(context: Context, uri: Uri?) {
+    fun saveStatusCardBackground(context: Context, uri: Uri?): Boolean {
+        val previous = statusCardBackgroundUri
         val finalUri = if (uri != null) {
-            context.filesDir.listFiles()?.filter { it.name.startsWith("status_card_bg") }?.forEach { it.delete() }
-            val fileName = "status_card_bg_${System.currentTimeMillis()}.jpg"
-            copyImageToInternalStorage(context, uri, fileName)
+            val fileName = "status_card_bg_${UUID.randomUUID()}.jpg"
+            copyImageToInternalStorage(context, uri, fileName) ?: return false
         } else {
-            context.filesDir.listFiles()?.filter { it.name.startsWith("status_card_bg") }?.forEach { it.delete() }
             null
         }
         statusCardBackgroundUri = finalUri
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putString(KEY_STATUS_BG_URI, finalUri?.toString())
             .apply()
+        deleteManagedImages(context, "status_card_bg", keep = finalUri)
+        previous?.path?.takeIf { uri == null }?.let { File(it).delete() }
+        return true
     }
 
-    fun saveAppBackground(context: Context, uri: Uri?) {
+    fun saveAppBackground(context: Context, uri: Uri?): Boolean {
         val finalUri = if (uri != null) {
-            context.filesDir.listFiles()?.filter { it.name.startsWith("app_bg") }?.forEach { it.delete() }
-            val fileName = "app_bg_${System.currentTimeMillis()}.jpg"
-            val copied = copyImageToInternalStorage(context, uri, fileName)
+            val fileName = "app_bg_${UUID.randomUUID()}.jpg"
+            val copied = copyImageToInternalStorage(context, uri, fileName) ?: return false
             if (backgroundDim == 0f) backgroundDim = 0.25f
             if (cardAlpha == 1f) cardAlpha = 0.75f
             copied?.let {
@@ -251,6 +253,14 @@ object ThemeConfig {
             .putBoolean(KEY_USE_BG_SEED_COLOR, useBackgroundSeedColor)
             .putInt(KEY_EXTRACTED_SEED_COLOR, extractedSeedColor?.toArgb() ?: 0)
             .apply()
+        deleteManagedImages(context, "app_bg", keep = finalUri)
+        return true
+    }
+
+    private fun deleteManagedImages(context: Context, prefix: String, keep: Uri?) {
+        val keepPath = keep?.path
+        context.filesDir.listFiles()?.filter { it.name.startsWith(prefix) && it.path != keepPath }
+            ?.forEach { it.delete() }
     }
 
     fun saveBackgroundDim(context: Context, dim: Float) {
@@ -320,24 +330,26 @@ object ThemeConfig {
     }
 
     private fun copyImageToInternalStorage(context: Context, uri: Uri, fileName: String): Uri? {
+        val file = File(context.filesDir, fileName)
         return try {
             val inputStream = if (uri.scheme == "file") {
                 File(uri.path ?: "").inputStream()
             } else {
                 context.contentResolver.openInputStream(uri)
             } ?: return null
-            val file = File(context.filesDir, fileName)
-            FileOutputStream(file).use { outputStream ->
-                val buffer = ByteArray(8 * 1024)
-                var read: Int
-                while (inputStream.read(buffer).also { read = it } != -1) {
-                    outputStream.write(buffer, 0, read)
+            inputStream.use { input ->
+                FileOutputStream(file).use { outputStream ->
+                    val buffer = ByteArray(8 * 1024)
+                    var read: Int
+                    while (input.read(buffer).also { read = it } != -1) {
+                        outputStream.write(buffer, 0, read)
+                    }
+                    outputStream.flush()
                 }
-                outputStream.flush()
             }
-            inputStream.close()
             Uri.fromFile(file)
         } catch (e: Exception) {
+            file.delete()
             null
         }
     }
@@ -577,4 +589,3 @@ fun PrettieMBeeTheme(
         }
     }
 }
-

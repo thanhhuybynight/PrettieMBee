@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -43,15 +42,10 @@ import androidx.compose.ui.unit.sp
 import anhiutangerine.prettiembee.BuildConfig
 import anhiutangerine.prettiembee.data.model.InjectConfig
 import anhiutangerine.prettiembee.ui.theme.AppThemeMode
-import anhiutangerine.prettiembee.ui.theme.DarkBackground
 import anhiutangerine.prettiembee.ui.theme.ErrorRed
-import anhiutangerine.prettiembee.ui.theme.LightBackground
-import anhiutangerine.prettiembee.ui.theme.OledBackground
 
 import anhiutangerine.prettiembee.ui.theme.SuccessGreen
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -124,15 +118,9 @@ fun FlashScreen(
         FlashingStatus.FAILED -> ErrorRed
     }
 
-    val isOled = ThemeConfig.themeMode == AppThemeMode.OLED_DARK
     val isDark = when (ThemeConfig.themeMode) {
         AppThemeMode.LIGHT -> false
         AppThemeMode.MATERIAL_DARK, AppThemeMode.OLED_DARK -> true
-    }
-    val baseBackground = when {
-        isOled -> OledBackground
-        isDark -> DarkBackground
-        else -> LightBackground
     }
     val textColor = if (isDark) Color.White else Color.Black
 
@@ -141,36 +129,8 @@ fun FlashScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(baseBackground)
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Full Screen Wallpaper (KittiSU style)
-        if (ThemeConfig.appBackgroundUri != null) {
-            val file = remember(ThemeConfig.appBackgroundUri) {
-                ThemeConfig.appBackgroundUri?.path?.let { File(it) }?.takeIf { it.exists() }
-            }
-            if (file != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(file)
-                        .allowHardware(false)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                if (ThemeConfig.backgroundDim > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = ThemeConfig.backgroundDim))
-                    )
-                }
-            }
-        }
-
         Scaffold(
             topBar = {
                 TopAppBar(

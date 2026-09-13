@@ -4,18 +4,29 @@ import android.content.Context
 import android.net.Uri
 import anhiutangerine.prettiembee.data.model.CommunityTheme
 import anhiutangerine.prettiembee.data.model.MbStoreTheme
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.UUID
 import java.util.zip.ZipInputStream
 
-class ThemeRepository(private val context: Context) {
+class ThemeRepository(
+    private val context: Context,
+    private val catalogUrl: String = REMOTE_CATALOG_URL
+) {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -32,26 +43,50 @@ class ThemeRepository(private val context: Context) {
     }
 
     fun getThemeDir(themeId: String): File {
-        return File(getThemesDirectory(), themeId)
+        require(isSafeThemeId(themeId)) { "ID theme không hợp lệ" }
+        val root = getThemesDirectory().canonicalFile
+        require(root == File(context.filesDir.canonicalFile, "themes")) { "Thư mục theme không an toàn" }
+        val dir = File(root, themeId)
+        require(dir.canonicalFile == dir) { "Thư mục theme không an toàn" }
+        return dir
     }
 
     fun isThemeDownloaded(theme: CommunityTheme): Boolean {
-        return hasValidThemeLayout(getThemeDir(theme.id))
+        return try {
+            hasValidThemeLayout(getThemeDir(theme.id))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun deleteDownloadedTheme(theme: CommunityTheme): Result<Unit> {
         return try {
             val dir = getThemeDir(theme.id)
-            if (dir.exists()) {
-                dir.deleteRecursively()
-            }
+            deleteThemeDirectory(dir)
             if (theme.isCustomImport) {
                 removeFromCustomThemes(theme.id)
             }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun isSafeThemeId(id: String): Boolean = id.matches(Regex("[A-Za-z0-9_-][A-Za-z0-9._-]*"))
+
+    private fun deleteThemeDirectory(dir: File) {
+        // Recheck containment at deletion time, including symlinks inside a theme.
+        require(getThemeDir(dir.name) == dir.canonicalFile) { "Thư mục theme không an toàn" }
+        val prefix = dir.canonicalPath + File.separator
+        dir.walkTopDown().forEach { file ->
+            require(file == dir || file.canonicalPath.startsWith(prefix)) { "Đường dẫn theme không an toàn" }
+            require(file.canonicalFile == file.absoluteFile) { "Liên kết theme không an toàn" }
+        }
+        if (dir.exists() && !dir.deleteRecursively()) throw IOException("Không thể xoá theme: ${dir.name}")
     }
 
     private fun removeFromCustomThemes(themeId: String) {
@@ -63,7 +98,8 @@ class ThemeRepository(private val context: Context) {
     private fun hasValidThemeLayout(themeDir: File): Boolean {
         val tokenFile = File(File(themeDir, "theme"), "token.json")
         val imagesDir = File(themeDir, "images")
-        return tokenFile.isFile && imagesDir.isDirectory && (imagesDir.listFiles()?.any { it.isFile } == true)
+        return tokenFile.isFile && imagesDir.isDirectory &&
+            (imagesDir.listFiles()?.any { it.isFile && it.name.endsWith(".png") } == true)
     }
 
     companion object {
@@ -74,62 +110,57 @@ class ThemeRepository(private val context: Context) {
         get() = File(context.filesDir, "remote_community_catalog.json")
 
     suspend fun getCommunityThemes(forceRefresh: Boolean = false): List<CommunityTheme> = withContext(Dispatchers.IO) {
-        val baseList = mutableListOf<CommunityTheme>()
-        var jsonContent: String? = null
+        currentCoroutineContext().ensureActive()
+        val cached = readCommunityCatalog { remoteCatalogCacheFile.readText() }
+        // Ordinary reads prefer validated disk cache; explicit refresh always tries remote.
+        val baseList = if (!forceRefresh && cached != null) cached else fetchCommunityCatalog()
+            ?: cached
+            ?: readCommunityCatalog {
+                context.assets.open("community_catalog.json").bufferedReader().use { it.readText() }
+            }
+            ?: emptyList()
+        currentCoroutineContext().ensureActive()
+        baseList + loadCustomThemes()
+    }
 
-        // Try fetching online catalog from GitHub theme branch
+    private fun readCommunityCatalog(read: () -> String): List<CommunityTheme>? = try {
+        json.decodeFromString<List<CommunityTheme>>(read()).filter { isSafeThemeId(it.id) }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
+    private suspend fun fetchCommunityCatalog(): List<CommunityTheme>? {
         try {
-            val url = URL(REMOTE_CATALOG_URL)
-            val conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 8000
-                readTimeout = 12000
-                instanceFollowRedirects = true
-            }
-            if (conn.responseCode in 200..299) {
-                val fetched = conn.inputStream.bufferedReader().use { it.readText() }
-                if (fetched.isNotBlank()) {
-                    jsonContent = fetched
-                    try {
-                        remoteCatalogCacheFile.writeText(fetched)
-                    } catch (_: Exception) {}
-                }
-            }
-        } catch (e: Exception) {
-            // Network failed or offline, fallback to cache or asset
-        }
-
-        // If remote fetch failed, use cached remote catalog
-        if (jsonContent == null && remoteCatalogCacheFile.exists()) {
-            try {
-                jsonContent = remoteCatalogCacheFile.readText()
-            } catch (_: Exception) {}
-        }
-
-        // Fallback to local asset if still null
-        if (jsonContent == null) {
-            try {
-                context.assets.open("community_catalog.json").use { stream ->
-                    InputStreamReader(stream).use { reader ->
-                        jsonContent = reader.readText()
+            val conn = openHttpConnection(catalogUrl, 8000, 12000)
+            val fetched = try {
+                conn.inputStream.use { input ->
+                    ByteArrayOutputStream().use { output ->
+                        copyCancellable(input, output)
+                        output.toString("UTF-8")
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } finally {
+                conn.disconnect()
             }
-        }
-
-        jsonContent?.let { content ->
+            val parsed = readCommunityCatalog { fetched } ?: return null
+            currentCoroutineContext().ensureActive()
+            // A malformed response must never replace a previously usable cache.
             try {
-                baseList.addAll(json.decodeFromString<List<CommunityTheme>>(content))
-            } catch (e: Exception) {
-                e.printStackTrace()
+                remoteCatalogCacheFile.writeText(fetched)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // A read-only cache must not discard a usable remote catalog.
             }
+            return parsed
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            currentCoroutineContext().ensureActive()
+            return null
         }
-
-        // Add custom imported themes
-        val customList = loadCustomThemes()
-        baseList.addAll(customList)
-        baseList
     }
 
     suspend fun getStoreThemes(): List<MbStoreTheme> = withContext(Dispatchers.IO) {
@@ -138,11 +169,15 @@ class ThemeRepository(private val context: Context) {
             context.assets.open("mb_store_catalog.json").use { stream ->
                 InputStreamReader(stream).use { reader ->
                     val content = reader.readText()
-                    val list = json.decodeFromString<List<MbStoreTheme>>(content)
+                    // Duplicate UUIDs may be valid store aliases. Keep the first label for
+                    // selection/UI keys without changing the catalog's source identities.
+                    val list = json.decodeFromString<List<MbStoreTheme>>(content).distinctBy { it.uuid }
                     cachedStoreThemes = list
                     list
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emptyList()
         }
@@ -153,71 +188,39 @@ class ThemeRepository(private val context: Context) {
         onProgress: (Float) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
         val downloadUrl = theme.downloadUrl ?: return@withContext Result.failure(Exception("Theme không có link tải trực tiếp"))
+        var tempZip: File? = null
+        var partialDir: File? = null
+        var completed = false
         try {
             val destDir = getThemeDir(theme.id)
-            // Wipe any leftover Magisk junk / partial extracts before unpack
-            if (destDir.exists()) destDir.deleteRecursively()
-            destDir.mkdirs()
-
-            val tempZip = File(context.cacheDir, "${theme.id}_temp.zip")
-            var currentUrl = downloadUrl
-            var conn: HttpURLConnection? = null
-            var redirectCount = 0
-
-            while (redirectCount < 5) {
-                val url = URL(currentUrl)
-                conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 15000
-                conn.readTimeout = 60000
-                conn.instanceFollowRedirects = true
-
-                val code = conn.responseCode
-                if (code == HttpURLConnection.HTTP_MOVED_PERM ||
-                    code == HttpURLConnection.HTTP_MOVED_TEMP ||
-                    code == 307 || code == 308) {
-                    val location = conn.getHeaderField("Location")
-                    conn.disconnect()
-                    if (!location.isNullOrBlank()) {
-                        currentUrl = location
-                        redirectCount++
-                        continue
-                    }
-                }
-                break
-            }
-
-            val finalConn = conn ?: return@withContext Result.failure(Exception("Không thể kết nối đến máy chủ"))
-            if (finalConn.responseCode !in 200..299) {
-                return@withContext Result.failure(Exception("HTTP error ${finalConn.responseCode}: ${finalConn.responseMessage}"))
-            }
-
-            val fileLength = finalConn.contentLengthLong.takeIf { it > 0 } ?: finalConn.contentLength.toLong()
-            finalConn.inputStream.use { input ->
-                FileOutputStream(tempZip).use { output ->
-                    val buffer = ByteArray(16384)
-                    var total: Long = 0
-                    var count: Int
-                    while (input.read(buffer).also { count = it } != -1) {
-                        total += count
-                        if (fileLength > 0) {
-                            onProgress(total.toFloat() / fileLength)
+            val stagingDir = getThemeDir("staging_${UUID.randomUUID()}")
+            currentCoroutineContext().ensureActive()
+            tempZip = File.createTempFile("theme_", ".zip", context.cacheDir)
+            val conn = openHttpConnection(downloadUrl, 15000, 60000)
+            try {
+                val fileLength = conn.contentLengthLong
+                conn.inputStream.use { input ->
+                    FileOutputStream(tempZip).use { output ->
+                        copyCancellable(input, output) { total ->
+                            if (fileLength > 0) onProgress(total.toFloat() / fileLength)
                         }
-                        output.write(buffer, 0, count)
                     }
                 }
+            } finally {
+                conn.disconnect()
             }
 
-            // Unpack tempZip into destDir
-            unzipFile(tempZip, destDir)
-            tempZip.delete()
-            normalizeExtractedStructure(destDir)
+            currentCoroutineContext().ensureActive()
+            partialDir = stagingDir
+            check(stagingDir.mkdirs()) { "Không thể tạo thư mục theme tạm" }
+            unzipFile(tempZip, stagingDir)
+            normalizeExtractedStructure(stagingDir)
 
-            if (!hasValidThemeLayout(destDir)) {
-                val listing = destDir
+            if (!hasValidThemeLayout(stagingDir)) {
+                val listing = stagingDir
                     .listFiles()
                     ?.joinToString(limit = 8) { it.name }
                     .orEmpty()
-                destDir.deleteRecursively()
                 return@withContext Result.failure(
                     Exception(
                         "ZIP không đúng cấu trúc (cần images/*.png + theme/token.json)" +
@@ -226,35 +229,46 @@ class ThemeRepository(private val context: Context) {
                 )
             }
 
+            currentCoroutineContext().ensureActive()
+            publishTheme(stagingDir, destDir)
+            partialDir = null
+            completed = true
             Result.success(destDir)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             Result.failure(e)
+        } finally {
+            cleanupTransfer(tempZip, partialDir.takeUnless { completed })
         }
     }
 
     suspend fun importCustomZip(uri: Uri, rawFileName: String): Result<CommunityTheme> = withContext(Dispatchers.IO) {
+        var tempZip: File? = null
+        var partialDir: File? = null
+        var completed = false
         try {
+            currentCoroutineContext().ensureActive()
             val cleanName = rawFileName.removeSuffix(".zip").replace("_", " ").trim()
-            val customId = "custom_${System.currentTimeMillis()}"
+            val customId = "custom_${UUID.randomUUID()}"
             val destDir = getThemeDir(customId)
-            if (destDir.exists()) destDir.deleteRecursively()
-            destDir.mkdirs()
-
-            val tempZip = File(context.cacheDir, "${customId}_import.zip")
+            tempZip = File.createTempFile("theme_import_", ".zip", context.cacheDir)
             context.contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(tempZip).use { output ->
-                    input.copyTo(output)
+                    copyCancellable(input, output)
                 }
             } ?: return@withContext Result.failure(Exception("Không thể đọc file ZIP từ bộ nhớ máy"))
 
+            currentCoroutineContext().ensureActive()
+            check(destDir.mkdir()) { "Không thể tạo thư mục theme" }
+            partialDir = destDir
             unzipFile(tempZip, destDir)
-            tempZip.delete()
 
             // Look for nested structures (e.g. if zip has <UUID>/images or theme-id/images)
             normalizeExtractedStructure(destDir)
 
             if (!hasValidThemeLayout(destDir)) {
-                destDir.deleteRecursively()
                 return@withContext Result.failure(
                     Exception("File ZIP không hợp lệ: cần images/*.png và theme/token.json")
                 )
@@ -275,17 +289,118 @@ class ThemeRepository(private val context: Context) {
                 isCustomImport = true
             )
 
+            currentCoroutineContext().ensureActive()
             saveCustomTheme(newTheme)
+            completed = true
             Result.success(newTheme)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             Result.failure(e)
+        } finally {
+            cleanupTransfer(tempZip, partialDir.takeUnless { completed })
         }
     }
 
-    private fun unzipFile(zipFile: File, destDir: File) {
+    private fun cleanupTransfer(tempZip: File?, partialDir: File?) {
+        // Cleanup is best effort if the filesystem becomes unavailable. Do not replace
+        // the operation's failure (especially cancellation) with a cleanup exception.
+        for (file in listOfNotNull(tempZip, partialDir)) {
+            try {
+                if (file == tempZip) {
+                    if (file.exists() && !file.delete()) throw IOException("Không thể xoá ZIP tạm")
+                } else {
+                    deleteThemeDirectory(file)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** Replaces a downloaded theme while retaining the prior valid copy on any failure. */
+    private suspend fun publishTheme(stagingDir: File, destDir: File) {
+        val backupDir = getThemeDir("backup_${UUID.randomUUID()}")
+        var backedUp = false
+        try {
+            currentCoroutineContext().ensureActive()
+            if (destDir.exists()) {
+                check(destDir.renameTo(backupDir)) { "Không thể sao lưu theme hiện tại" }
+                backedUp = true
+            }
+            currentCoroutineContext().ensureActive()
+            check(stagingDir.renameTo(destDir)) { "Không thể công bố theme đã tải" }
+            if (backedUp) {
+                try {
+                    deleteThemeDirectory(backupDir)
+                } catch (_: Exception) {
+                    // The new theme is already valid and published; stale backup cleanup
+                    // must not turn a successful replacement into a reported failure.
+                }
+            }
+        } catch (e: Exception) {
+            if (!destDir.exists() && backedUp) backupDir.renameTo(destDir)
+            throw e
+        }
+    }
+
+    private suspend fun openHttpConnection(address: String, connectTimeout: Int, readTimeout: Int): HttpURLConnection {
+        var url = URL(address)
+        repeat(6) { redirects ->
+            currentCoroutineContext().ensureActive()
+            require(url.protocol == "http" || url.protocol == "https") { "URL theme không hợp lệ" }
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                this.connectTimeout = connectTimeout
+                this.readTimeout = readTimeout
+                instanceFollowRedirects = false
+            }
+            var handedOff = false
+            try {
+                val code = conn.responseCode
+                currentCoroutineContext().ensureActive()
+                if (code in listOf(301, 302, 303, 307, 308)) {
+                    val location = conn.getHeaderField("Location")
+                    if (redirects == 5) throw IOException("Quá nhiều chuyển hướng HTTP")
+                    if (location.isNullOrBlank()) throw IOException("HTTP $code thiếu Location")
+                    val next = URL(url, location)
+                    if (url.protocol == "https" && next.protocol != "https") {
+                        throw IOException("Chuyển hướng HTTPS không an toàn")
+                    }
+                    url = next
+                } else {
+                    if (code !in 200..299) throw IOException("HTTP error $code: ${conn.responseMessage}")
+                    handedOff = true
+                    return conn
+                }
+            } finally {
+                if (!handedOff) conn.disconnect()
+            }
+        }
+        throw IOException("Quá nhiều chuyển hướng HTTP")
+    }
+
+    private suspend fun copyCancellable(input: InputStream, output: OutputStream, onBytes: (Long) -> Unit = {}) {
+        val buffer = ByteArray(16384)
+        var total = 0L
+        while (true) {
+            currentCoroutineContext().ensureActive()
+            val count = input.read(buffer)
+            currentCoroutineContext().ensureActive()
+            if (count == -1) return
+            output.write(buffer, 0, count)
+            total += count
+            onBytes(total)
+        }
+    }
+
+    private suspend fun unzipFile(zipFile: File, destDir: File) {
         ZipInputStream(zipFile.inputStream().buffered()).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
+                currentCoroutineContext().ensureActive()
                 // Windows-authored zips may use backslashes; Android needs '/'
                 val rawName = entry.name.replace('\\', '/')
                 if (rawName.isBlank() || rawName.startsWith("/") || rawName.contains("..")) {
@@ -303,7 +418,7 @@ class ThemeRepository(private val context: Context) {
                 } else {
                     newFile.parentFile?.mkdirs()
                     FileOutputStream(newFile).use { fos ->
-                        zis.copyTo(fos)
+                        copyCancellable(zis, fos)
                     }
                 }
                 zis.closeEntry()
@@ -312,11 +427,12 @@ class ThemeRepository(private val context: Context) {
         }
     }
 
-    private fun normalizeExtractedStructure(destDir: File) {
+    private suspend fun normalizeExtractedStructure(destDir: File) {
         unwrapNestedLayout(destDir, depth = 0)
     }
 
-    private fun unwrapNestedLayout(destDir: File, depth: Int) {
+    private suspend fun unwrapNestedLayout(destDir: File, depth: Int) {
+        currentCoroutineContext().ensureActive()
         if (depth > 3 || hasValidThemeLayout(destDir)) return
 
         // Unwrap one nested folder: <uuid-or-id>/images + <uuid-or-id>/theme
@@ -350,6 +466,8 @@ class ThemeRepository(private val context: Context) {
                     bin.delete()
                     return
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 // not a zip payload; ignore
             }
@@ -360,7 +478,9 @@ class ThemeRepository(private val context: Context) {
         if (!customThemesFile.exists()) return emptyList()
         return try {
             val content = customThemesFile.readText()
-            json.decodeFromString<List<CommunityTheme>>(content)
+            json.decodeFromString<List<CommunityTheme>>(content).filter { isSafeThemeId(it.id) }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emptyList()
         }

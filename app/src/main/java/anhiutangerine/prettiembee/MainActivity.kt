@@ -1,259 +1,84 @@
 package anhiutangerine.prettiembee
 
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import anhiutangerine.prettiembee.data.model.CommunityTheme
-import anhiutangerine.prettiembee.data.model.InjectConfig
-import anhiutangerine.prettiembee.data.model.InjectResult
-import anhiutangerine.prettiembee.data.model.InstalledTheme
-import anhiutangerine.prettiembee.data.model.MbStoreTheme
-import anhiutangerine.prettiembee.data.repository.RootRepository
-import anhiutangerine.prettiembee.data.repository.ThemeRepository
-import anhiutangerine.prettiembee.ui.screens.FlashScreen
-import anhiutangerine.prettiembee.ui.screens.FlashScreenConstants
-import anhiutangerine.prettiembee.ui.screens.FlashingStatus
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import anhiutangerine.prettiembee.ui.components.TargetThemePickerBottomSheet
+import anhiutangerine.prettiembee.ui.screens.FlashScreen
 import anhiutangerine.prettiembee.ui.screens.HomeScreen
 import anhiutangerine.prettiembee.ui.screens.ThemeDetailSheet
 import anhiutangerine.prettiembee.ui.theme.PrettieMBeeTheme
 import anhiutangerine.prettiembee.ui.theme.ThemeConfig
-import kotlinx.coroutines.launch
-import java.io.File
 
 class MainActivity : ComponentActivity() {
-
-    private lateinit var rootRepository: RootRepository
-    private lateinit var themeRepository: ThemeRepository
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         ThemeConfig.load(applicationContext)
-        rootRepository = RootRepository(applicationContext)
-        themeRepository = ThemeRepository(applicationContext)
+        val model = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                MainViewModel(application) as T
+        })[MainViewModel::class.java]
 
         setContent {
             PrettieMBeeTheme {
-                val coroutineScope = rememberCoroutineScope()
-
-                var isRootGranted by remember { mutableStateOf(false) }
-                var isMbInstalled by remember { mutableStateOf(false) }
-                var targetPackage by remember { mutableStateOf(rootRepository.targetPackage) }
-                var installedThemes by remember { mutableStateOf<List<InstalledTheme>>(emptyList()) }
-                var communityThemes by remember { mutableStateOf<List<CommunityTheme>>(emptyList()) }
-                var downloadedThemeIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-                var storeThemes by remember { mutableStateOf<List<MbStoreTheme>>(emptyList()) }
-
-                var selectedThemeForDetail by remember { mutableStateOf<CommunityTheme?>(null) }
-                var currentTargetUuid by remember { mutableStateOf("aa3cb89a-8325-41b4-b59b-dfaea086cf80") }
-                var currentTargetName by remember { mutableStateOf("Cánh Én Mùa Xuân") }
-
-                var isTargetPickerOpen by remember { mutableStateOf(false) }
-
-                // FlashScreen state
-                var isFlashScreenOpen by remember { mutableStateOf(false) }
-                var activeInstallConfig by remember { mutableStateOf<InjectConfig?>(null) }
-                var activeTargetName by remember { mutableStateOf("") }
-                var flashingStatus by remember { mutableStateOf(FlashingStatus.FLASHING) }
-                var flashFailedReason by remember { mutableStateOf<String?>(null) }
-                val injectLogs = remember { mutableStateListOf<String>() }
-
-                // Function to refresh state
-                val refreshAll = {
-                    coroutineScope.launch {
-                        rootRepository.targetPackage = targetPackage
-                        isRootGranted = rootRepository.isRootAvailable()
-                        isMbInstalled = rootRepository.isMbInstalled()
-                        val loadedStore = themeRepository.getStoreThemes()
-                        storeThemes = loadedStore
-                        communityThemes = themeRepository.getCommunityThemes()
-                        downloadedThemeIds = communityThemes
-                            .filter { themeRepository.isThemeDownloaded(it) }
-                            .map { it.id }
-                            .toSet()
-
-                        if (isRootGranted) {
-                            installedThemes = rootRepository.getInstalledThemes(loadedStore)
-                            // Auto select first installed theme as default target if available
-                            installedThemes.firstOrNull()?.let { first ->
-                                currentTargetUuid = first.uuid
-                                currentTargetName = first.storeTheme?.displayName ?: "Theme (${first.uuid.take(8)}...)"
-                            }
-                        }
+                LaunchedEffect(Unit) { model.refresh() }
+                LaunchedEffect(model.message) {
+                    model.message?.let {
+                        Toast.makeText(applicationContext, it, Toast.LENGTH_LONG).show()
+                        model.message = null
                     }
                 }
-
-                LaunchedEffect(targetPackage) {
-                    refreshAll()
+                val config = model.activeInstallConfig
+                if (model.isFlashScreenOpen && config != null) {
+                    FlashScreen(
+                        config = config,
+                        currentTargetName = model.activeTargetName,
+                        logs = model.injectLogs,
+                        status = model.flashingStatus,
+                        failedReason = model.flashFailedReason,
+                        onBack = { model.isFlashScreenOpen = false }
+                    )
+                } else {
+                    HomeScreen(
+                        isRootGranted = model.isRootGranted,
+                        isMbInstalled = model.isMbInstalled,
+                        targetPackage = model.targetPackage,
+                        installedThemeCount = model.installedThemes.size,
+                        installedThemes = model.installedThemes,
+                        communityThemes = model.communityThemes,
+                        isThemeDownloaded = { it.id in model.downloadedThemeIds },
+                        onRefreshStatus = { model.refresh(forceRefresh = true) },
+                        onChangePackage = model::changePackage,
+                        onSelectTheme = model::selectTheme,
+                        onTogglePin = { ThemeConfig.togglePinnedTheme(applicationContext, it.id) },
+                        onDeleteDownloaded = { model.deleteDownloaded(it) },
+                        onImportZip = { uri, name -> model.importZip(uri, name) },
+                        onResetThemes = { model.resetThemes() }
+                    )
                 }
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (isFlashScreenOpen && activeInstallConfig != null) {
-                        FlashScreen(
-                            config = activeInstallConfig!!,
-                            currentTargetName = activeTargetName,
-                            logs = injectLogs,
-                            status = flashingStatus,
-                            failedReason = flashFailedReason,
-                            onBack = { isFlashScreenOpen = false }
-                        )
-                    } else {
-                        HomeScreen(
-                            isRootGranted = isRootGranted,
-                            isMbInstalled = isMbInstalled,
-                            targetPackage = targetPackage,
-                            installedThemeCount = installedThemes.size,
-                            installedThemes = installedThemes,
-                            communityThemes = communityThemes,
-                            isThemeDownloaded = { theme -> theme.id in downloadedThemeIds },
-                            onRefreshStatus = {
-                                Toast.makeText(applicationContext, "Đang làm mới dữ liệu và đồng bộ kho theme...", Toast.LENGTH_SHORT).show()
-                                refreshAll()
-                            },
-                            onChangePackage = { newPkg ->
-                                targetPackage = newPkg
-                                rootRepository.targetPackage = newPkg
-                            },
-                            onSelectTheme = { theme ->
-                                selectedThemeForDetail = theme
-                                storeThemes.find { it.uuid.equals(theme.defaultTargetUuid, ignoreCase = true) }?.let { match ->
-                                    currentTargetUuid = match.uuid
-                                    currentTargetName = match.displayName
-                                }
-                            },
-                            onTogglePin = { theme ->
-                                ThemeConfig.togglePinnedTheme(applicationContext, theme.id)
-                            },
-                            onDeleteDownloaded = { theme ->
-                                themeRepository.deleteDownloadedTheme(theme)
-                                downloadedThemeIds = downloadedThemeIds - theme.id
-                                if (theme.isCustomImport) {
-                                    // getCommunityThemes is suspend (network); drop the custom entry locally
-                                    communityThemes = communityThemes.filterNot { it.id == theme.id }
-                                }
-                            },
-                            onImportZip = { uri, fileName ->
-                                coroutineScope.launch {
-                                    Toast.makeText(applicationContext, "Đang xử lý file ZIP...", Toast.LENGTH_SHORT).show()
-                                    val res = themeRepository.importCustomZip(uri, fileName)
-                                    if (res.isSuccess) {
-                                        Toast.makeText(applicationContext, "Nạp theme thành công!", Toast.LENGTH_SHORT).show()
-                                        communityThemes = themeRepository.getCommunityThemes()
-                                        downloadedThemeIds = communityThemes
-                                            .filter { themeRepository.isThemeDownloaded(it) }
-                                            .map { it.id }
-                                            .toSet()
-                                        res.getOrNull()?.let { imported ->
-                                            selectedThemeForDetail = imported
-                                        }
-                                    } else {
-                                        Toast.makeText(applicationContext, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            },
-                            onResetThemes = {
-                                rootRepository.resetAllThemes()
-                            }
-                        )
-                    }
-
-                    // Theme Detail Bottom Sheet
-                    selectedThemeForDetail?.let { theme ->
-                        ThemeDetailSheet(
-                            theme = theme,
-                            currentTargetUuid = currentTargetUuid,
-                            currentTargetName = currentTargetName,
-                            onOpenTargetPicker = { isTargetPickerOpen = true },
-                            onStartInject = { config ->
-                                selectedThemeForDetail = null
-                                activeInstallConfig = config
-                                activeTargetName = currentTargetName
-                                flashingStatus = FlashingStatus.FLASHING
-                                flashFailedReason = null
-                                injectLogs.clear()
-
-                                val initialLines = FlashScreenConstants.createInitialLogs(
-                                    config = config,
-                                    currentTargetName = currentTargetName,
-                                    targetPackage = targetPackage
-                                )
-                                injectLogs.addAll(initialLines)
-                                isFlashScreenOpen = true
-
-                                coroutineScope.launch {
-                                    // Check if theme files exist locally
-                                    var themeDir = themeRepository.getThemeDir(config.sourceTheme.id)
-                                    if (!themeRepository.isThemeDownloaded(config.sourceTheme)) {
-                                        injectLogs.add("- Đang tải theme từ máy chủ...")
-                                        val dlRes = themeRepository.downloadTheme(config.sourceTheme) { progress ->
-                                            val pct = (progress * 100).toInt()
-                                            if (pct % 25 == 0) {
-                                                injectLogs.add("- Tiến độ tải: $pct%")
-                                            }
-                                        }
-                                        if (dlRes.isFailure) {
-                                            val err = "Tải theme thất bại: ${dlRes.exceptionOrNull()?.message}"
-                                            injectLogs.add("- $err")
-                                            flashFailedReason = err
-                                            flashingStatus = FlashingStatus.FAILED
-                                            return@launch
-                                        }
-                                        themeDir = dlRes.getOrThrow()
-                                        injectLogs.add("- Đã tải và giải nén theme.")
-                                    }
-
-                                    // Run Root Injection
-                                    val res = rootRepository.injectTheme(config, themeDir) { logMsg ->
-                                        injectLogs.add(logMsg)
-                                    }
-
-                                    if (res.isSuccess) {
-                                        ThemeConfig.saveAppliedTheme(
-                                            context = applicationContext,
-                                            newTheme = config.sourceTheme.name,
-                                            originalTheme = currentTargetName,
-                                            isPriority = config.usePriorityVariant,
-                                            themeId = config.sourceTheme.id
-                                        )
-                                        flashingStatus = FlashingStatus.SUCCESS
-                                        // Auto-launch MB Bank after successful install
-                                        rootRepository.launchMbBank(
-                                            useDeeplink = config.autoLaunchDeeplink,
-                                            targetUuid = config.targetUuid
-                                        )
-                                    } else {
-                                        val err = res.errorMessage ?: "Có lỗi xảy ra trong quá trình cài đặt"
-                                        flashFailedReason = err
-                                        flashingStatus = FlashingStatus.FAILED
-                                    }
-                                    refreshAll()
-                                }
-                            },
-                            onDismiss = { selectedThemeForDetail = null }
-                        )
-                    }
-
-                    // Target Theme Picker
-                    if (isTargetPickerOpen) {
-                        TargetThemePickerBottomSheet(
-                            installedThemes = installedThemes,
-                            storeThemes = storeThemes,
-                            selectedUuid = currentTargetUuid,
-                            onSelectTarget = { uuid, name ->
-                                currentTargetUuid = uuid
-                                currentTargetName = name
-                            },
-                            onDismiss = { isTargetPickerOpen = false }
-                        )
-                    }
+                model.selectedTheme?.let { theme ->
+                    ThemeDetailSheet(
+                        theme = theme,
+                        currentTargetUuid = model.currentTargetUuid,
+                        currentTargetName = model.currentTargetName,
+                        onOpenTargetPicker = { model.isTargetPickerOpen = true },
+                        onStartInject = { model.startInject(it) },
+                        onDismiss = { model.selectedTheme = null }
+                    )
+                }
+                if (model.isTargetPickerOpen) {
+                    TargetThemePickerBottomSheet(
+                        installedThemes = model.installedThemes,
+                        storeThemes = model.storeThemes,
+                        selectedUuid = model.currentTargetUuid,
+                        onSelectTarget = model::selectTarget,
+                        onDismiss = { model.isTargetPickerOpen = false }
+                    )
                 }
             }
         }

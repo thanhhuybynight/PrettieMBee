@@ -13,13 +13,13 @@ import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.Locale
 
-class RootRepository(private val context: Context) {
-
-    var targetPackage: String = "com.mbmobile"
-        set(value) {
-            field = value
-            cachedDataDir = null
-        }
+class RootRepository(
+    private val context: Context,
+    val targetPackage: String = "com.mbmobile"
+) {
+    init {
+        require(isValidPackageName(targetPackage)) { "Tên gói ứng dụng không hợp lệ" }
+    }
 
     private var cachedDataDir: String? = null
 
@@ -47,16 +47,14 @@ class RootRepository(private val context: Context) {
             val line = dumpRes.out.firstOrNull()
             if (!line.isNullOrBlank() && line.contains("dataDir=")) {
                 val extracted = line.substringAfter("dataDir=").trim().substringBefore(" ")
-                if (extracted.isNotBlank()) {
+                if (isSafeDataDir(extracted)) {
                     cachedDataDir = extracted
                     return@withContext extracted
                 }
             }
         } catch (_: Exception) {}
 
-        val defaultPath = "/data/data/$targetPackage"
-        cachedDataDir = defaultPath
-        defaultPath
+        throw IllegalStateException("Không tìm thấy thư mục dữ liệu hợp lệ của $targetPackage")
     }
 
     suspend fun getMbThemeBase(): String {
@@ -89,7 +87,7 @@ class RootRepository(private val context: Context) {
 
             for (uuid in listRes.out) {
                 val cleanUuid = uuid.trim()
-                if (cleanUuid.isBlank() || !cleanUuid.contains("-")) continue
+                if (!isValidUuid(cleanUuid)) continue
 
                 val countRes = Shell.cmd("ls -1 '$themeBase/$cleanUuid/images/'*.png 2>/dev/null | wc -l").exec()
                 val imgCount = countRes.out.firstOrNull()?.trim()?.toIntOrNull() ?: 0
@@ -277,12 +275,22 @@ class RootRepository(private val context: Context) {
         }
 
         try {
+            if (!isValidUuid(config.targetUuid)) {
+                val err = "UUID theme đích không hợp lệ"
+                log("[Lỗi] $err")
+                return@withContext InjectResult(false, logs, err)
+            }
             log("[Chuẩn bị] Bắt đầu nạp theme: ${config.sourceTheme.name}")
             log("[Thông tin] Ứng dụng mục tiêu: $targetPackage")
 
             // 1. Force stop MB Bank
             log("[Tiến trình] Dừng ứng dụng $targetPackage...")
-            Shell.cmd("am force-stop $targetPackage").exec()
+            val stopResult = Shell.cmd("am force-stop $targetPackage").exec()
+            if (!stopResult.isSuccess) {
+                val err = "Không thể dừng ứng dụng mục tiêu (mã lỗi ${stopResult.code})"
+                log("[Lỗi] $err")
+                return@withContext InjectResult(false, logs, err)
+            }
 
             // 2. Resolve Data Directory
             val dataDir = resolveDataDir()
@@ -311,7 +319,7 @@ class RootRepository(private val context: Context) {
 
             val missing = mutableListOf<String>()
             if (!sourceImages.isDirectory) missing += "images/"
-            else if (sourceImages.listFiles()?.any { it.isFile } != true) missing += "images/ (rỗng)"
+            else if (sourceImages.listFiles()?.any { it.isFile && it.extension.equals("png", true) } != true) missing += "images/ (không có PNG)"
             if (!tokenFile.isFile) {
                 missing += if (config.usePriorityVariant && !File(sourceThemeFolder, "token_priority.json").exists()) {
                     "theme/token.json"
@@ -352,7 +360,7 @@ class RootRepository(private val context: Context) {
             val testTarget = Shell.cmd("test -d '$targetDir' && echo 1 || echo 0").exec()
             val targetExists = testTarget.out.firstOrNull()?.trim() == "1"
 
-            if (!targetExists) {
+            if (!prepCmd.isSuccess || !targetExists) {
                 val err = "Không thể khởi tạo thư mục đích:\n${prepOutput.ifBlank { "Lệnh mkdir không thể tạo thư mục tại $targetDir" }}"
                 log("[Lỗi] $err")
                 return@withContext InjectResult(false, logs, err)
@@ -422,19 +430,28 @@ class RootRepository(private val context: Context) {
 
             // 7. Fix permissions and ownership recursively for Flutter themes
             log("[Tiến trình] Phân quyền hạn và chủ sở hữu ($uidGid)...")
-            val flutterDir = "$dataDir/app_flutter"
-            Shell.cmd(
-                "chown -R $uidGid '$flutterDir'",
+            val permissions = Shell.cmd(
+                "chown -R $uidGid '$targetDir'",
                 "chmod 755 '$dataDir/app_flutter' 2>/dev/null",
                 "chmod 755 '$dataDir/app_flutter/app_theme' 2>/dev/null",
                 "chmod 755 '$dataDir/app_flutter/app_theme/unzip' 2>/dev/null",
-                "chmod -R 755 '$targetDir'",
-                "chmod -R a+r '$targetDir'"
+                "find '$targetDir' -type d -exec chmod 755 {} +",
+                "find '$targetDir' -type f -exec chmod 644 {} +"
             ).exec()
+            if (!permissions.isSuccess) {
+                val err = "Không thể sửa quyền sở hữu/tập tin theme (mã lỗi ${permissions.code})"
+                log("[Lỗi] $err")
+                return@withContext InjectResult(false, logs, err)
+            }
 
             // 8. Restore SELinux context
             log("[Tiến trình] Phục hồi ngữ cảnh SELinux (restorecon)...")
-            Shell.cmd("restorecon -R '$flutterDir'").exec()
+            val restore = Shell.cmd("restorecon -R '$targetDir'").exec()
+            if (!restore.isSuccess) {
+                val err = "Không thể phục hồi ngữ cảnh SELinux (mã lỗi ${restore.code})"
+                log("[Lỗi] $err")
+                return@withContext InjectResult(false, logs, err)
+            }
 
             // 9. Post-actions ready
             log("[Thông tin] Đã phân quyền và kiểm tra tệp tin hoàn tất.")
@@ -448,15 +465,20 @@ class RootRepository(private val context: Context) {
         }
     }
 
-    fun launchMbBank(useDeeplink: Boolean = false, targetUuid: String? = null) {
+    suspend fun launchMbBank(useDeeplink: Boolean = false, targetUuid: String? = null): Result<Unit> =
+        withContext(Dispatchers.IO) {
         try {
             if (useDeeplink && !targetUuid.isNullOrBlank()) {
+                require(isValidUuid(targetUuid)) { "UUID theme đích không hợp lệ" }
                 val deeplink = "mbbank://installingnew?af_force_deeplink=true&ad_dp=theme_detail&id=$targetUuid"
-                Shell.cmd("am start -a android.intent.action.VIEW -d '$deeplink' $targetPackage").exec()
+                val result = Shell.cmd("am start -a android.intent.action.VIEW -d '$deeplink' $targetPackage").exec()
+                if (!result.isSuccess) error("Không thể mở deeplink (mã lỗi ${result.code})")
             } else {
-                Shell.cmd("am start -n $targetPackage/io.flutter.plugins.MainActivity").exec()
+                val result = Shell.cmd("am start -n $targetPackage/io.flutter.plugins.MainActivity").exec()
+                if (!result.isSuccess) error("Không thể mở ứng dụng (mã lỗi ${result.code})")
             }
-        } catch (_: Exception) {}
+            Result.success(Unit)
+        } catch (e: Exception) { Result.failure(e) }
     }
 
     suspend fun resolveUidGid(dataDir: String): String? = withContext(Dispatchers.IO) {
@@ -482,17 +504,6 @@ class RootRepository(private val context: Context) {
             return@withContext "$userId:$userId"
         }
 
-        // Strategy 4: stat on APK path
-        val pathRes = Shell.cmd("pm path $targetPackage 2>/dev/null").exec()
-        val apkPath = pathRes.out.firstOrNull { it.startsWith("package:") }?.substringAfter("package:")?.trim()
-        if (!apkPath.isNullOrBlank()) {
-            val apkStat = Shell.cmd("stat -c '%u:%g' '$apkPath' 2>/dev/null").exec()
-            val resUid = apkStat.out.firstOrNull()?.trim()
-            if (!resUid.isNullOrBlank() && resUid.contains(":")) {
-                return@withContext resUid
-            }
-        }
-
         null
     }
 
@@ -503,7 +514,8 @@ class RootRepository(private val context: Context) {
             }
 
             // 1. Force stop MB Bank
-            Shell.cmd("am force-stop $targetPackage").exec()
+            val stopped = Shell.cmd("am force-stop $targetPackage").exec()
+            if (!stopped.isSuccess) return@withContext Result.failure(Exception("Không thể dừng ứng dụng mục tiêu"))
 
             // 2. Resolve dataDir and paths
             val dataDir = resolveDataDir()
@@ -519,15 +531,13 @@ class RootRepository(private val context: Context) {
             cmds.add("rm -rf '/data/data/$targetPackage/app_flutter/app_theme' 2>/dev/null || true")
             cmds.add("rm -rf '/data/user/0/$targetPackage/app_flutter/app_theme' 2>/dev/null || true")
             cmds.add("mkdir -p '$unzipDir'")
-            if (!uidGid.isNullOrBlank()) {
-                cmds.add("chown -R $uidGid '$flutterDir' 2>/dev/null || true")
-                cmds.add("chown -R $uidGid '$themeBase' 2>/dev/null || true")
-            }
+            if (uidGid.isNullOrBlank()) return@withContext Result.failure(Exception("Không thể xác định UID/GID ứng dụng"))
+            cmds.add("chown -R $uidGid '$themeBase'")
             cmds.add("chmod 755 '$dataDir' 2>/dev/null || true")
             cmds.add("chmod 755 '$flutterDir' 2>/dev/null || true")
             cmds.add("chmod 755 '$themeBase' 2>/dev/null || true")
             cmds.add("chmod 755 '$unzipDir' 2>/dev/null || true")
-            cmds.add("restorecon -R '$themeBase' 2>/dev/null || true")
+            cmds.add("restorecon -R '$themeBase'")
 
             val res = Shell.cmd(*cmds.toTypedArray()).exec()
 
@@ -535,7 +545,7 @@ class RootRepository(private val context: Context) {
             val checkRes = Shell.cmd("test -d '$unzipDir' && echo 1 || echo 0").exec()
             val targetExists = checkRes.out.firstOrNull()?.trim() == "1"
 
-            if (!targetExists) {
+            if (!res.isSuccess || !targetExists) {
                 val errDetails = (res.out + res.err).filter { it.isNotBlank() }.joinToString("\n")
                 return@withContext Result.failure(
                     Exception("Không thể khởi tạo thư mục rỗng cho theme (mã lỗi ${res.code}): ${errDetails.ifBlank { "Lệnh mkdir không thể tạo $unzipDir" }}")
@@ -547,5 +557,16 @@ class RootRepository(private val context: Context) {
             Result.failure(e)
         }
     }
-}
 
+    companion object {
+        private val PACKAGE = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+")
+        private val UUID = Regex("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
+
+        fun isValidPackageName(value: String): Boolean = PACKAGE.matches(value)
+        fun isValidUuid(value: String): Boolean = UUID.matches(value)
+    }
+
+    private fun isSafeDataDir(value: String): Boolean =
+        listOf("/data/data/$targetPackage", "/data/user/0/$targetPackage", "/data/user_de/0/$targetPackage")
+            .contains(value)
+}

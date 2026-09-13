@@ -22,16 +22,24 @@ jobs:
         cache: gradle
 
     - name: Grant execute permission for gradlew
-      run: chmod +x gradlew || true
+      run: chmod +x gradlew
 
-    - name: Build with Gradle
-      run: ./gradlew assembleDebug --stacktrace
+    - name: Test, lint and build
+      run: ./gradlew testDebugUnitTest lintDebug assembleDebug --stacktrace
+
+    - name: Upload verification reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: verification-${{ github.run_id }}-${{ github.run_attempt }}
+        path: app/build/reports/
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: PrettieMBee-debug-${{ github.ref_name }}
+        name: PrettieMBee-debug-${{ github.run_id }}-${{ github.run_attempt }}
         path: app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
 
     - name: Create GitHub Release on Tag
       if: startsWith(github.ref, 'refs/tags/v')
@@ -40,4 +48,3 @@ jobs:
         files: app/build/outputs/apk/debug/*.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

@@ -148,8 +148,8 @@ fun HomeScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            ThemeConfig.saveStatusCardBackground(context, uri)
-            Toast.makeText(context, "Đã cập nhật ảnh nền Status Card", Toast.LENGTH_SHORT).show()
+            val saved = ThemeConfig.saveStatusCardBackground(context, uri)
+            Toast.makeText(context, if (saved) "Đã cập nhật ảnh nền Status Card" else "Không thể đọc ảnh đã chọn", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -157,8 +157,8 @@ fun HomeScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            ThemeConfig.saveAppBackground(context, uri)
-            Toast.makeText(context, "Đã áp dụng hình nền toàn ứng dụng", Toast.LENGTH_SHORT).show()
+            val saved = ThemeConfig.saveAppBackground(context, uri)
+            Toast.makeText(context, if (saved) "Đã áp dụng hình nền toàn ứng dụng" else "Không thể đọc ảnh đã chọn", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -444,15 +444,18 @@ fun HomeScreen(
                         if (onResetThemes != null) {
                             coroutineScope.launch {
                                 isResettingThemes = true
-                                val res = onResetThemes()
-                                isResettingThemes = false
-                                showResetConfirmDialog = false
-                                if (res.isSuccess) {
-                                    Toast.makeText(context, "Đã xoá toàn bộ theme và khôi phục mặc định thành công!", Toast.LENGTH_LONG).show()
-                                    onRefreshStatus()
-                                } else {
-                                    val err = res.exceptionOrNull()?.message ?: "Thao tác thất bại"
-                                    Toast.makeText(context, "Lỗi: $err", Toast.LENGTH_LONG).show()
+                                try {
+                                    val res = onResetThemes()
+                                    showResetConfirmDialog = false
+                                    if (res.isSuccess) {
+                                        Toast.makeText(context, "Đã xoá toàn bộ theme và khôi phục mặc định thành công!", Toast.LENGTH_LONG).show()
+                                        onRefreshStatus()
+                                    } else {
+                                        val err = res.exceptionOrNull()?.message ?: "Thao tác thất bại"
+                                        Toast.makeText(context, "Lỗi: $err", Toast.LENGTH_LONG).show()
+                                    }
+                                } finally {
+                                    isResettingThemes = false
                                 }
                             }
                         }
